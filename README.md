@@ -1,2 +1,2 @@
-# sirs
-Segurança Informática em Redes e Sistemas - IST - 2019/2020
+# SIRS
+Segurança Informática em Redes e Sistemas - IST - 2020/2021
