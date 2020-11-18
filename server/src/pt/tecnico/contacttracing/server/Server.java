@@ -5,19 +5,9 @@ Contact Tracing
 Basic Version (Server) - receive a single pair of <number, key>, not encrypted
 */
 
-package pt.tecnico.contacttracing;
+package pt.tecnico.contacttracing.server;
 
-import java.io.*;
 import java.net.*;
-import java.util.*;
-import java.security.*;
-import java.security.spec.*;
-import javax.crypto.*;
-import javax.crypto.spec.*;
-
-import java.util.concurrent.TimeUnit;
-
-import java.nio.ByteBuffer;
 
 import com.google.gson.*;
 
