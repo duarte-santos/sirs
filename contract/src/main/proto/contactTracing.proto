@@ -1,0 +1,28 @@
+//
+// Protocol buffers definition for Contact Tracing server
+//
+
+syntax = "proto3";
+package pt.tecnico.contacttracing.grpc;
+
+import "google/protobuf/timestamp.proto";
+
+option java_multiple_files = true;
+
+/* -------------- Infected -> Server -------------- */
+
+message InfectedRequest {
+  int32 number = 1;
+  int32 key = 2;
+}
+
+message InfectedResponse {
+  // Empty response
+}
+
+/* -------------- Service -------------- */
+
+service ContactTracing {
+  // Infected -> Server
+  rpc infected(InfectedRequest) returns (InfectedResponse);
+}

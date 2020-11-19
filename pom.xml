@@ -1,0 +1,74 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>pt.tecnico.contacttracing</groupId>
+	<artifactId>ContactTracing</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<properties>
+		<!-- compiler properties -->
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+		<java.version>1.8</java.version>
+		<maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+
+		<exec-maven-plugin.version>1.6.0</exec-maven-plugin.version>
+
+		<javax.annotation-api.version>1.3.2</javax.annotation-api.version>
+		<jaxb.version>2.3.0</jaxb.version>
+
+		<version.grpc>1.28.0</version.grpc>
+		<version.protobuf>3.11.4</version.protobuf>
+		<version.javax.annotation-api>1.3.2</version.javax.annotation-api>
+		<version.protoc>3.11.4</version.protoc>
+		<version.protobuf-maven-plugin>0.6.1</version.protobuf-maven-plugin>
+		<version.os-maven-plugin>1.6.2</version.os-maven-plugin>
+		<version.maven-compiler-plugin>3.8.1</version.maven-compiler-plugin>
+	</properties>
+
+	<modules>
+		<module>contract</module>
+		<module>server</module>
+		<module>client</module>
+	</modules>
+
+	<dependencies>
+		<dependency>
+			<groupId>javax.annotation</groupId>
+			<artifactId>javax.annotation-api</artifactId>
+			<version>${javax.annotation-api.version}</version>
+		</dependency>
+		<!-- JAX-B - explicitly required since Java 9 -->
+		<dependency>
+			<groupId>javax.xml.bind</groupId>
+			<artifactId>jaxb-api</artifactId>
+			<version>${jaxb.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-core</artifactId>
+			<version>${jaxb.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.xml.bind</groupId>
+			<artifactId>jaxb-impl</artifactId>
+			<version>${jaxb.version}</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
+	</dependencies>
+
+	<build>
+		<plugins>
+			<!-- Plugin to check available updates on dependencies -->
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>versions-maven-plugin</artifactId>
+				<version>2.7</version>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>
