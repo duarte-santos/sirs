@@ -27,6 +27,13 @@ public class ClientFrontend implements AutoCloseable {
 		return stub.infected(request);
 	}
 
+	/**
+	 * Handles client 'get_infected' remote call.
+	**/
+	public GetInfectedResponse getInfected(GetInfectedRequest request) {
+		return stub.getInfected(request);
+	}
+
 	@Override
 	public void close() {
 		channel.shutdown();	

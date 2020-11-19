@@ -9,8 +9,11 @@
 package pt.tecnico.contacttracing.server;
 
 import java.time.Instant;
+import java.util.List;
+
 import pt.tecnico.contacttracing.grpc.*;
 import io.grpc.stub.StreamObserver;
+import com.google.protobuf.Timestamp;
 
 
 public class ServerImpl extends ContactTracingGrpc.ContactTracingImplBase {
@@ -35,6 +38,7 @@ public class ServerImpl extends ContactTracingGrpc.ContactTracingImplBase {
 
 		System.out.printf("Content: number %d, key %d%n", number, key);
 
+		/* update storage */
 		storage.storeInfectedData(number, key, timestamp);
 
 		/* send response */
@@ -43,5 +47,40 @@ public class ServerImpl extends ContactTracingGrpc.ContactTracingImplBase {
 		responseObserver.onCompleted();
 
 		System.out.printf("Sent response to infected user!%n");
+	}
+
+
+	/* ====================================================================== */
+    /* ====[                       GET_INFECTED                         ]==== */
+    /* ====================================================================== */
+    
+	@Override
+    public void getInfected(GetInfectedRequest request, StreamObserver<GetInfectedResponse> responseObserver) {
+		System.out.printf("%nReceived new request for infected update!%n");
+
+		/* parse client message */
+		Timestamp timestamp = request.getLastUpdate();
+		Instant lastUpdate = Instant.ofEpochSecond(timestamp.getSeconds(), timestamp.getNanos());
+
+		System.out.println("Content: last update " + lastUpdate);
+
+		/* get update from storage */
+		List<Storage.InfectedData> new_data = storage.getUpdates(lastUpdate);
+
+		/* prepare response */
+		GetInfectedResponse.Builder response = GetInfectedResponse.newBuilder();
+		for (Storage.InfectedData data : new_data) {
+			int number = data.getNumbers();
+			int key = data.getKeys();
+			InfectedInfo responseData = InfectedInfo.newBuilder().setNumber(number).setKey(key).build();
+
+			response.addInfectedInfos(responseData);
+		}
+		
+		/* send response */
+		responseObserver.onNext(response.build());
+		responseObserver.onCompleted();
+
+		System.out.printf("Sent infected update to user!%n");
 	}
 }

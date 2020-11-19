@@ -54,4 +54,15 @@ public class Storage {
 		InfectedData data = new InfectedData(number, key, timestamp);
 		addInfectedData(data);
 	}
+
+	public List<InfectedData> getUpdates(Instant lastUpdate) {
+		List<InfectedData> all_data = getInfectedData();
+		List<InfectedData> new_data = new ArrayList<InfectedData>();
+
+		for (InfectedData data : all_data)
+			if (data.getTimestamp().compareTo(lastUpdate) >= 0) new_data.add(data);
+
+		return new_data;
+	}
+
 }

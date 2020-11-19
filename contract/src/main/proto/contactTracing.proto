@@ -9,7 +9,7 @@ import "google/protobuf/timestamp.proto";
 
 option java_multiple_files = true;
 
-/* -------------- Infected -> Server -------------- */
+/* -------------- New Infected -------------- */
 
 message InfectedRequest {
   int32 number = 1;
@@ -20,9 +20,26 @@ message InfectedResponse {
   // Empty response
 }
 
+/* ---------- Get Infected Updates ---------- */
+message InfectedInfo {
+  int32 number = 1;
+  int32 key = 2;
+}
+
+message GetInfectedRequest {
+  google.protobuf.Timestamp lastUpdate = 1;
+}
+
+message GetInfectedResponse {
+  repeated InfectedInfo infectedInfos = 1;
+}
+
+
 /* -------------- Service -------------- */
 
 service ContactTracing {
-  // Infected -> Server
+  // New Infected
   rpc infected(InfectedRequest) returns (InfectedResponse);
+  // Get Infected Updates
+  rpc getInfected(GetInfectedRequest) returns (GetInfectedResponse);
 }

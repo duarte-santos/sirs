@@ -6,11 +6,13 @@ import pt.tecnico.contacttracing.grpc.*;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
-public class ClientApp {
-	private static final String CLIENT_USAGE = "Usage: java %s host port%n";
+import java.time.Instant;
+import com.google.protobuf.Timestamp;
 
-    /** Buffer size for receiving a UDP packet. */
-	private static final int BUFFER_SIZE = 65_507;
+import java.util.List;
+
+public class ClientApp {
+	private static final String CLIENT_USAGE = "Usage: java %s host port%n"; 
 
 	public static void main(String[] args) {
 		/* print client name */
@@ -50,6 +52,8 @@ public class ClientApp {
 	private static void run(ClientFrontend frontend){
 		String command;
 		Scanner scanner = new Scanner(System.in);
+		
+		Instant lastUpdate = Instant.now();
 
 		System.out.println("\nType a command\n");
 
@@ -61,15 +65,42 @@ public class ClientApp {
 				command = scanner.next();
 
 				/********* infected ********/
-				if(command.equals("infected")){
+				if (command.equals("infected")){
 					/* send request */
 					InfectedRequest request = InfectedRequest.newBuilder().setNumber(1337).setKey(123456789).build();
 					InfectedResponse response = frontend.infected(request);
 					
 					/* print feedback */
-					System.out.println("> Infected info stored");
+					System.out.println("Infected info stored");
 				}
-				
+
+				/******* get_infected ******/
+				else if(command.equals("get_infected")){
+					/* send request */
+					GetInfectedRequest request = GetInfectedRequest.newBuilder()
+												.setLastUpdate( instantToTimestamp(lastUpdate) )
+												.build();
+					GetInfectedResponse response = frontend.getInfected(request);
+					
+					/* set lastUpdate to current time */
+					lastUpdate = Instant.now();
+
+					/* print response */
+					List<InfectedInfo> new_data = response.getInfectedInfosList();
+					
+					/* no updates */
+					if (new_data.size() == 0) System.out.println("No new infected data available");
+					
+					/* new updates */
+					else  {
+						System.out.println("New infected data received:");
+						for (InfectedInfo data : new_data)
+							System.out.printf("- Number: %s, Key: %s%n", data.getNumber(), data.getKey());
+					}
+	
+
+				}
+
 				/*********** exit ***********/
 				else if (command.equals("exit")){
 					break;
@@ -92,6 +123,15 @@ public class ClientApp {
 		
 		scanner.close();
 		
+	}
+
+	private static Timestamp instantToTimestamp(Instant instant) {
+		/* setup grpc timestamp */
+		Timestamp timestamp = Timestamp.newBuilder()
+								.setSeconds(instant.getEpochSecond())
+								.setNanos(instant.getNano())
+								.build();
+		return timestamp;
 	}
 
 }
