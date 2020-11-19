@@ -60,7 +60,7 @@ public class ClientApp {
 				/* read next command */
 				command = scanner.next();
 
-				/********* ctrl_ping ********/
+				/********* infected ********/
 				if(command.equals("infected")){
 					/* send request */
 					InfectedRequest request = InfectedRequest.newBuilder().setNumber(1337).setKey(123456789).build();
