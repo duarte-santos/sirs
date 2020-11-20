@@ -45,6 +45,11 @@ public class Storage {
 
 	private Connection conn;
 
+	/*
+	private String yourUser = "afonso";
+	private String yourPass = "yo";
+	*/
+
 	private String dbName = "contact";
 	private String dbUser = "server";
 	private String dbPass = "server";
@@ -56,6 +61,16 @@ public class Storage {
 	public Storage(){
 		
 		try{ 
+
+			/*
+			// Create database, if it doesn't exist
+			this.conn = DriverManager.getConnection("jdbc:mysql://localhost/mysql?user=" + yourUser + "&password=" + yourPass);
+			stmt = conn.createStatement();
+			stmt.executeUpdate("CREATE DATABASE IF NOT EXISTS " +  dbName);
+			stmt.executeUpdate("CREATE USER IF NOT EXISTS '" + dbUser + "'@'localhost' IDENTIFIED BY '" + dbPass + "';");
+			stmt.executeUpdate("GRANT ALL PRIVILEGES ON " + dbName + " TO '" + dbUser + "'@'localhost';");
+			*/
+
 			// Connect to MySQL database
 			this.conn = DriverManager.getConnection("jdbc:mysql://localhost/" + dbName + "?user=" + dbUser + "&password=" + dbPass);
 

@@ -8,6 +8,21 @@ Install the app (in base directory):
  ```
 
 ## Server
+
+Firstly, we need to setup the MySql database
+
+Run:
+```sh
+$ sudo mysql
+```
+
+Inside the mysql prompt, run:
+```sql
+CREATE DATABASE contact;
+CREATE USER 'server'@'localhost' IDENTIFIED BY 'server';
+GRANT ALL PRIVILEGES ON contact TO 'server'@'localhost';
+```
+
 To run the server:
  ```sh
  $ cd server
