@@ -67,7 +67,7 @@ public class ClientApp {
 				/********* infected ********/
 				if (command.equals("infected")){
 					/* send request */
-					InfectedRequest request = InfectedRequest.newBuilder().setNumber(1337).setKey(123456789).build();
+					InfectedRequest request = InfectedRequest.newBuilder().setNumber(133744).setKey(123456789).build();
 					InfectedResponse response = frontend.infected(request);
 					
 					/* print feedback */

@@ -12,60 +12,122 @@ import java.net.*;
 import com.google.gson.*;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.Map;
-import java.util.Set;
 import java.time.Instant;
+import java.sql.*;
 
 
 public class Storage {
+
 	// Class InfectedData
 	public class InfectedData {
-		private int _numbers;
-		private int _keys;
+		private int _number;
+		private int _key;
+		private Instant _timestamp;
 
-		InfectedData(int numbers, int keys) {
-			_numbers = numbers;
-			_keys = keys;
+		InfectedData(int number, int key, Instant timestamp) {
+			_number = number;
+			_key = key;
+			_timestamp = timestamp;
 		}
 
 		public int getNumbers(){
-			return _numbers;
+			return _number;
 		}
 
 		public int getKeys(){
-			return _keys;
+			return _key;
 		}
-    }
 
-	private Map<Instant, InfectedData> _storage = new ConcurrentHashMap<Instant, InfectedData>();
-
-	public Map<Instant, InfectedData> getInfectedData() {
-		return _storage;
-	}
-	public void addInfectedData(Instant instant, InfectedData data) {
-		_storage.put(instant, data);
+		public Instant getTimestamp(){
+			return _timestamp;
+		}
 	}
 
-	public void storeInfectedData(int number, int key, Instant instant) {
-		InfectedData data = new InfectedData(number, key);
-		addInfectedData(instant, data);
+	private Connection conn;
+
+	private String dbName = "contact";
+	private String dbUser = "server";
+	private String dbPass = "server";
+	private String tableName = "numbers";
+
+	Statement stmt = null;
+	ResultSet rs = null;
+	
+	public Storage(){
+		
+		try{ 
+			// Connect to MySQL database
+			this.conn = DriverManager.getConnection("jdbc:mysql://localhost/" + dbName + "?user=" + dbUser + "&password=" + dbPass);
+
+			// Create table data, if it doesn't exist
+			String sqlCreate = "CREATE TABLE IF NOT EXISTS " + this.tableName
+				+ "  (number          INT PRIMARY KEY,"
+				+ "   pkey            INT,"
+				+ "   seconds         LONG,"
+				+ "   nanos           LONG);";
+				
+			stmt = conn.createStatement();
+			stmt.executeUpdate(sqlCreate);
+
+		}catch(SQLException ex){
+			System.out.println("SQLException: " + ex.getMessage());
+			System.out.println("SQLState: " + ex.getSQLState());
+		}catch(Exception ex){
+			System.out.println("Exception: " + ex.getMessage());
+		}
 	}
 
 	public List<InfectedData> getUpdates(Instant lastUpdate) {
-		Map<Instant, InfectedData> all_data = getInfectedData();
-		Set<Instant> all_ts = all_data.keySet();
+		List<InfectedData> infectedData = new ArrayList<InfectedData>();
+
+		try{
+			stmt = conn.createStatement();
+			rs = stmt.executeQuery("SELECT * FROM " + this.tableName);
+			
+			while (rs.next()) {
+				int number = rs.getInt("number");
+				int key = rs.getInt("pkey");
+				long seconds = rs.getLong("seconds");
+				long nanos = rs.getLong("nanos");
+				Instant timestamp = Instant.ofEpochSecond(seconds, nanos);
+				InfectedData data = new InfectedData(number, key, timestamp);
+				infectedData.add(data);
+			}
+
+		}catch(SQLException ex){
+			System.out.println("SQLException: " + ex.getMessage());
+			System.out.println("SQLState: " + ex.getSQLState());
+		}
 
 		List<InfectedData> new_data = new ArrayList<InfectedData>();
 
-		for (Instant ts : all_ts)
-			if (ts.compareTo(lastUpdate) >= 0) {
-				InfectedData relevant_data = all_data.get(ts);
-				new_data.add(relevant_data);
-			}
+		for (InfectedData i : infectedData){
+			Instant ts = i.getTimestamp();
+			if (ts.compareTo(lastUpdate) >= 0)
+				new_data.add(i);
+		}
 
 		return new_data;
+		
 	}
 
+	public void storeInfectedData(int number, int key, Instant timestamp) {
+
+		long seconds = timestamp.getEpochSecond() ;
+		long nanos = timestamp.getNano();
+		
+		try{
+			String statement = "INSERT INTO " + this.tableName + " VALUES("
+				+ Integer.toString(number) + ","
+				+ Integer.toString(key) +    ","
+				+ Long.toString(seconds) +   ","
+				+ Long.toString(nanos) +     ");";
+			
+			stmt = conn.createStatement();
+			stmt.executeUpdate(statement);
+		}catch(SQLException ex){
+			System.out.println("SQLException: " + ex.getMessage());
+			System.out.println("SQLState: " + ex.getSQLState());
+		}
+	}
 }
