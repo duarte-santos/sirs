@@ -1,6 +1,11 @@
 # SIRS
 Segurança Informática em Redes e Sistemas - IST - 2020/2021
 
+## Setting up the environment
+1. Install AdoptOpenJDK 8 and add it to Path
+2. Install Gradle (v6.7.1) and add it to Path
+3. Install MySQL and add it to Path
+
 ## Before running
 **Step 0: Install the app (in base directory):**
  ```sh
