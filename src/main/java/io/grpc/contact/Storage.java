@@ -71,7 +71,7 @@ public class Storage {
 			*/
 
 			// Connect to MySQL database
-			this.conn = DriverManager.getConnection("jdbc:mysql://localhost/" + dbName + "?user=" + dbUser + "&password=" + dbPass);
+			this.conn = DriverManager.getConnection("jdbc:mysql://localhost/" + dbName + "?user=" + dbUser + "&password=" + dbPass + "&serverTimezone=UTC");
 
 			// Create table data, if it doesn't exist
 			String sqlCreate = "CREATE TABLE IF NOT EXISTS " + this.tableName
