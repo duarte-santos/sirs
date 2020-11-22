@@ -6,10 +6,9 @@
 
 // status - receive a single pair of <number, key>, not encrypted
 
-package pt.tecnico.contacttracing.server;
+package io.grpc.contact;
 
 import java.net.*;
-import com.google.gson.*;
 import java.util.List;
 import java.util.ArrayList;
 import java.time.Instant;

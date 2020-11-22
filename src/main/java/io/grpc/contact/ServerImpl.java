@@ -6,12 +6,12 @@
 
 // status - receive a single pair of <number, key>, not encrypted
 
-package pt.tecnico.contacttracing.server;
+package io.grpc.contact;
 
 import java.time.Instant;
 import java.util.List;
 
-import pt.tecnico.contacttracing.grpc.*;
+import io.grpc.contact.*;
 import io.grpc.stub.StreamObserver;
 import com.google.protobuf.Timestamp;
 
@@ -22,7 +22,7 @@ public class ServerImpl extends ContactTracingGrpc.ContactTracingImplBase {
 	private Storage storage = new Storage();
 	
 	/* ====================================================================== */
-    /* ====[                       NEW_INFECTED                         ]==== */
+    /* ====[                       NEW_INFECTED                         ]==== 	*/
     /* ====================================================================== */
     
 	@Override

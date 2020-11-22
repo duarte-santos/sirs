@@ -1,4 +1,4 @@
-package pt.tecnico.contacttracing.server;
+package io.grpc.contact;
 
 import io.grpc.BindableService;
 import io.grpc.Server;
