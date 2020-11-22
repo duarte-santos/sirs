@@ -1,0 +1,48 @@
+//
+// Protocol buffers definition for Contact Tracing server
+//
+
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "io.grpc.contact";
+option java_outer_classname = "ContactProto";
+
+package contact;
+
+import "google/protobuf/timestamp.proto";
+
+/* -------------- New Infected -------------- */
+
+message InfectedRequest {
+  int32 number = 1;
+  int32 key = 2;
+}
+
+message InfectedResponse {
+  // Empty response
+}
+
+/* ---------- Get Infected Updates ---------- */
+message InfectedInfo {
+  int32 number = 1;
+  int32 key = 2;
+}
+
+message GetInfectedRequest {
+  google.protobuf.Timestamp lastUpdate = 1;
+}
+
+message GetInfectedResponse {
+  repeated InfectedInfo infectedInfos = 1;
+}
+
+
+/* -------------- Service -------------- */
+
+service ContactTracing {
+  // New Infected
+  rpc infected(InfectedRequest) returns (InfectedResponse);
+  // Get Infected Updates
+  rpc getInfected(GetInfectedRequest) returns (GetInfectedResponse);
+}
