@@ -44,7 +44,7 @@ GRANT ALL PRIVILEGES ON `contact`.* TO 'server'@'localhost';
 **Step 2: To run the server:**
  ```sh
  $ cd build/install/sirs/bin/
- $ ./contact-server.bat 31337
+ $ ./contacttracing-server.bat 50051
  ```
 NOTE: The run commands were only tested on windows
 
@@ -52,7 +52,7 @@ NOTE: The run commands were only tested on windows
 **Step 3: To run the client:**
  ```sh
  $ cd build/install/sirs/bin/ (unnecessary)
- $ ./contact-client.bat localhost 31337
+ $ ./contacttracing-client.bat localhost 50051
  ```
 
  NOTE: The run commands were only tested on windows

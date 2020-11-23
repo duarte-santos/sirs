@@ -6,7 +6,7 @@
 
 // status - receive a single pair of <number, key>, not encrypted
 
-package io.grpc.contact;
+package pt.tecnico.examples.contacttracing;
 
 import java.net.*;
 import java.util.List;

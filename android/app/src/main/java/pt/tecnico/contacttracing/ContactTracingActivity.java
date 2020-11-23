@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.grpc.contactapp;
+package pt.tecnico.contacttracing;
 
 import android.content.Context;
 import android.os.AsyncTask;
@@ -36,10 +36,10 @@ import java.text.MessageFormat;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
-import io.grpc.contact.*;
-import io.grpc.contact.ContactTracingGrpc.*;
+import pt.tecnico.examples.contacttracing.*;
+import pt.tecnico.examples.contacttracing.ContactTracingGrpc.*;
 
-public class ContactActivity extends AppCompatActivity {
+public class ContactTracingActivity extends AppCompatActivity {
   private ManagedChannel channel;
 
   private EditText hostEdit;
@@ -128,12 +128,12 @@ public class ContactActivity extends AppCompatActivity {
   private static class GrpcTask extends AsyncTask<Void, Void, String> {
     private final GrpcRunnable grpcRunnable;
     private final ManagedChannel channel;
-    private final WeakReference<ContactActivity> activityReference;
+    private final WeakReference<ContactTracingActivity> activityReference;
 
-    GrpcTask(GrpcRunnable grpcRunnable, ManagedChannel channel, ContactActivity activity) {
+    GrpcTask(GrpcRunnable grpcRunnable, ManagedChannel channel, ContactTracingActivity activity) {
       this.grpcRunnable = grpcRunnable;
       this.channel = channel;
-      this.activityReference = new WeakReference<ContactActivity>(activity);
+      this.activityReference = new WeakReference<ContactTracingActivity>(activity);
     }
 
     @Override
@@ -152,7 +152,7 @@ public class ContactActivity extends AppCompatActivity {
 
     @Override
     protected void onPostExecute(String result) {
-      ContactActivity activity = activityReference.get();
+      ContactTracingActivity activity = activityReference.get();
       if (activity == null) {
         return;
       }
@@ -208,4 +208,4 @@ public class ContactActivity extends AppCompatActivity {
     logs.append("\n");
   }
 
-} // public class ContactActivity
+} // public class ContactTracingActivity

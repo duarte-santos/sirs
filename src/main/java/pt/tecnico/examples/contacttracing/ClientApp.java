@@ -1,7 +1,7 @@
-package io.grpc.contact;
+package pt.tecnico.examples.contacttracing;
 
 import io.grpc.StatusRuntimeException;
-import io.grpc.contact.*;
+import pt.tecnico.examples.contacttracing.*;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 import java.time.Instant;

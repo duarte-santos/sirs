@@ -1,4 +1,4 @@
-package io.grpc.contact;
+package pt.tecnico.examples.contacttracing;
 
 import io.grpc.BindableService;
 import io.grpc.Server;

@@ -1,8 +1,8 @@
-package io.grpc.contact;
+package pt.tecnico.examples.contacttracing;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
-import io.grpc.contact.*;
+import pt.tecnico.examples.contacttracing.*;
 
 /**
  * Encapsulates gRPC channel and stub for remote service. 

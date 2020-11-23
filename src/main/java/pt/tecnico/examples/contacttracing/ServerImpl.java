@@ -6,12 +6,12 @@
 
 // status - receive a single pair of <number, key>, not encrypted
 
-package io.grpc.contact;
+package pt.tecnico.examples.contacttracing;
 
 import java.time.Instant;
 import java.util.List;
 
-import io.grpc.contact.*;
+import pt.tecnico.examples.contacttracing.*;
 import io.grpc.stub.StreamObserver;
 import com.google.protobuf.Timestamp;
 

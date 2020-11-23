@@ -57,15 +57,15 @@ sourceSets {
 startScripts.enabled = false
 
 task Server(type: CreateStartScripts) {
-    mainClassName = 'io.grpc.contact.ServerApp'
-    applicationName = 'contact-server'
+    mainClassName = 'pt.tecnico.examples.contacttracing.ServerApp'
+    applicationName = 'contacttracing-server'
     outputDir = new File(project.buildDir, 'tmp')
     classpath = startScripts.classpath
 }
 
 task Client(type: CreateStartScripts) {
-    mainClassName = 'io.grpc.contact.ClientApp'
-    applicationName = 'contact-client'
+    mainClassName = 'pt.tecnico.examples.contacttracing.ClientApp'
+    applicationName = 'contacttracing-client'
     outputDir = new File(project.buildDir, 'tmp')
     classpath = startScripts.classpath
 }
