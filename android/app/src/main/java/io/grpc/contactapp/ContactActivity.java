@@ -48,7 +48,7 @@ public class ContactActivity extends AppCompatActivity {
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_helloworld);
+    setContentView(R.layout.activity_contact);
     sendButton = (Button) findViewById(R.id.send_button);
     hostEdit = (EditText) findViewById(R.id.host_edit_text);
     portEdit = (EditText) findViewById(R.id.port_edit_text);

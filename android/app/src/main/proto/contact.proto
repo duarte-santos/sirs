@@ -12,8 +12,8 @@ package contact;
 
 import "google/protobuf/timestamp.proto";
 
-/* -------------- New Infected -------------- */
 
+/* ------- Register new infected ------- */
 message InfectedRequest {
   int32 number = 1;
   int32 key = 2;
@@ -23,7 +23,7 @@ message InfectedResponse {
   // Empty response
 }
 
-/* ---------- Get Infected Updates ---------- */
+/* -------- Get recent infected -------- */
 message InfectedInfo {
   int32 number = 1;
   int32 key = 2;
@@ -38,11 +38,10 @@ message GetInfectedResponse {
 }
 
 
-/* -------------- Service -------------- */
-
+/* ---------- Tracing service ---------- */
 service ContactTracing {
-  // New Infected
+  // Register new infected
   rpc infected(InfectedRequest) returns (InfectedResponse);
-  // Get Infected Updates
+  // Get recent infected
   rpc getInfected(GetInfectedRequest) returns (GetInfectedResponse);
 }
