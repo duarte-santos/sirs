@@ -28,15 +28,17 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
-import io.grpc.contact.*;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.TimeUnit;
 
-public class ContactApp extends AppCompatActivity {
+import io.grpc.ManagedChannel;
+import io.grpc.ManagedChannelBuilder;
+import io.grpc.contact.*;
+
+public class ContactActivity extends AppCompatActivity {
   private Button sendButton;
   private EditText hostEdit;
   private EditText portEdit;
@@ -81,12 +83,13 @@ public class ContactApp extends AppCompatActivity {
       String message = params[1];
       String portStr = params[2];
       int port = TextUtils.isEmpty(portStr) ? 0 : Integer.valueOf(portStr);
+      int number = TextUtils.isEmpty(message) ? 0 : Integer.valueOf(message);
       try {
         channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
-        GreeterGrpc.GreeterBlockingStub stub = GreeterGrpc.newBlockingStub(channel);
-        HelloRequest request = HelloRequest.newBuilder().setName(message).build();
-        HelloReply reply = stub.sayHello(request);
-        return reply.getMessage();
+        ContactTracingGrpc.ContactTracingBlockingStub stub = ContactTracingGrpc.newBlockingStub(channel);
+        InfectedRequest request = InfectedRequest.newBuilder().setNumber(number).setKey(number).build();
+				InfectedResponse response = stub.infected(request);
+        return "Infected info stored";
       } catch (Exception e) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
