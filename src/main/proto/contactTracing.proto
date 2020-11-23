@@ -12,19 +12,20 @@ package contact;
 
 import "google/protobuf/timestamp.proto";
 
-/* -------------- New Infected -------------- */
 
-message InfectedRequest {
+/* ------- Register new infected ------- */
+message RegisterInfectedRequest {
   int32 number = 1;
   int32 key = 2;
 }
 
-message InfectedResponse {
+message RegisterInfectedResponse {
+  // FIXME : bool success with the status of the operation (?)
   // Empty response
 }
 
-/* ---------- Get Infected Updates ---------- */
-message InfectedInfo {
+/* -------- Get recent infected -------- */
+message Infected {
   int32 number = 1;
   int32 key = 2;
 }
@@ -34,15 +35,15 @@ message GetInfectedRequest {
 }
 
 message GetInfectedResponse {
-  repeated InfectedInfo infectedInfos = 1;
+  // FIXME : client Stream rpc instead of Repeated field (?)
+  repeated Infected infected = 1;
 }
 
 
-/* -------------- Service -------------- */
-
+/* ---------- Tracing service ---------- */
 service ContactTracing {
-  // New Infected
-  rpc infected(InfectedRequest) returns (InfectedResponse);
-  // Get Infected Updates
+  // Register new infected
+  rpc registerInfected(RegisterInfectedRequest) returns (RegisterInfectedResponse);
+  // Get recent infected
   rpc getInfected(GetInfectedRequest) returns (GetInfectedResponse);
 }

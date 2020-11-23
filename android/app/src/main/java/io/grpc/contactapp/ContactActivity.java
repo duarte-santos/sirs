@@ -16,7 +16,6 @@
 
 package io.grpc.contactapp;
 
-import android.app.Activity;
 import android.content.Context;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -32,88 +31,181 @@ import android.widget.TextView;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.ref.WeakReference;
-import java.util.concurrent.TimeUnit;
+import java.text.MessageFormat;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.StatusRuntimeException;
 import io.grpc.contact.*;
+import io.grpc.contact.ContactTracingGrpc.*;
 
 public class ContactActivity extends AppCompatActivity {
-  private Button sendButton;
+  private ManagedChannel channel;
+
   private EditText hostEdit;
   private EditText portEdit;
-  private EditText messageEdit;
+  private Button startRouteGuideButton;
+  private Button exitRouteGuideButton;
+  private Button getFeatureButton;
+  private Button listFeaturesButton;
+  private Button recordRouteButton;
+  private Button routeChatButton;
   private TextView resultText;
+
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_contact);
-    sendButton = (Button) findViewById(R.id.send_button);
     hostEdit = (EditText) findViewById(R.id.host_edit_text);
     portEdit = (EditText) findViewById(R.id.port_edit_text);
-    messageEdit = (EditText) findViewById(R.id.message_edit_text);
-    resultText = (TextView) findViewById(R.id.grpc_response_text);
+    startRouteGuideButton = (Button) findViewById(R.id.start_contact_tracing_button);
+    exitRouteGuideButton = (Button) findViewById(R.id.exit_contact_tracing_button);
+    getFeatureButton = (Button) findViewById(R.id.register_infected_button);
+    listFeaturesButton = (Button) findViewById(R.id.list_features_button);
+    recordRouteButton = (Button) findViewById(R.id.record_route_button);
+    routeChatButton = (Button) findViewById(R.id.route_chat_button);
+    resultText = (TextView) findViewById(R.id.result_text);
     resultText.setMovementMethod(new ScrollingMovementMethod());
+    disableButtons();
   }
 
-  public void sendMessage(View view) {
+
+  public void startContactTracing(View view) {
+    String host = hostEdit.getText().toString();
+    String portStr = portEdit.getText().toString();
+    int port = TextUtils.isEmpty(portStr) ? 0 : Integer.valueOf(portStr);
     ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE))
-        .hideSoftInputFromWindow(hostEdit.getWindowToken(), 0);
-    sendButton.setEnabled(false);
-    resultText.setText("");
-    new GrpcTask(this)
-        .execute(
-            hostEdit.getText().toString(),
-            messageEdit.getText().toString(),
-            portEdit.getText().toString());
+            .hideSoftInputFromWindow(hostEdit.getWindowToken(), 0);
+    channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
+    hostEdit.setEnabled(false);
+    portEdit.setEnabled(false);
+    startRouteGuideButton.setEnabled(false);
+    enableButtons();
   }
 
-  private static class GrpcTask extends AsyncTask<String, Void, String> {
-    private final WeakReference<Activity> activityReference;
-    private ManagedChannel channel;
+  public void exitContactTracing(View view) {
+    channel.shutdown();
+    disableButtons();
+    hostEdit.setEnabled(true);
+    portEdit.setEnabled(true);
+    startRouteGuideButton.setEnabled(true);
+  }
 
-    private GrpcTask(Activity activity) {
-      this.activityReference = new WeakReference<Activity>(activity);
+
+  public void registerInfected(View view) {
+    setResultText("");
+    disableButtons();
+    new GrpcTask(new RegisterInfectedRunnable(), channel, this).execute();
+  }
+
+
+  private void setResultText(String text) {
+    resultText.setText(text);
+  }
+
+  private void disableButtons() {
+    getFeatureButton.setEnabled(false);
+    listFeaturesButton.setEnabled(false);
+    recordRouteButton.setEnabled(false);
+    routeChatButton.setEnabled(false);
+    exitRouteGuideButton.setEnabled(false);
+  }
+
+  private void enableButtons() {
+    exitRouteGuideButton.setEnabled(true);
+    getFeatureButton.setEnabled(true);
+    listFeaturesButton.setEnabled(true);
+    recordRouteButton.setEnabled(true);
+    routeChatButton.setEnabled(true);
+  }
+
+
+  /* ====================================================================== */
+  /* ====[                          GrpcTask                          ]==== */
+  /* ====================================================================== */
+
+  private static class GrpcTask extends AsyncTask<Void, Void, String> {
+    private final GrpcRunnable grpcRunnable;
+    private final ManagedChannel channel;
+    private final WeakReference<ContactActivity> activityReference;
+
+    GrpcTask(GrpcRunnable grpcRunnable, ManagedChannel channel, ContactActivity activity) {
+      this.grpcRunnable = grpcRunnable;
+      this.channel = channel;
+      this.activityReference = new WeakReference<ContactActivity>(activity);
     }
 
     @Override
-    protected String doInBackground(String... params) {
-      String host = params[0];
-      String message = params[1];
-      String portStr = params[2];
-      int port = TextUtils.isEmpty(portStr) ? 0 : Integer.valueOf(portStr);
-      int number = TextUtils.isEmpty(message) ? 0 : Integer.valueOf(message);
+    protected String doInBackground(Void... nothing) {
       try {
-        channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
-        ContactTracingGrpc.ContactTracingBlockingStub stub = ContactTracingGrpc.newBlockingStub(channel);
-        InfectedRequest request = InfectedRequest.newBuilder().setNumber(number).setKey(number).build();
-				InfectedResponse response = stub.infected(request);
-        return "Infected info stored";
+        String logs = grpcRunnable.run(ContactTracingGrpc.newBlockingStub(channel), ContactTracingGrpc.newStub(channel));
+        return "Success!\n" + logs;
       } catch (Exception e) {
         StringWriter sw = new StringWriter();
         PrintWriter pw = new PrintWriter(sw);
         e.printStackTrace(pw);
         pw.flush();
-        return String.format("Failed... : %n%s", sw);
+        return "Failed... :\n" + sw;
       }
     }
 
     @Override
     protected void onPostExecute(String result) {
-      try {
-        channel.shutdown().awaitTermination(1, TimeUnit.SECONDS);
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-      }
-      Activity activity = activityReference.get();
+      ContactActivity activity = activityReference.get();
       if (activity == null) {
         return;
       }
-      TextView resultText = (TextView) activity.findViewById(R.id.grpc_response_text);
-      Button sendButton = (Button) activity.findViewById(R.id.send_button);
-      resultText.setText(result);
-      sendButton.setEnabled(true);
+      activity.setResultText(result);
+      activity.enableButtons();
     }
+
+  } // private static class GrpcTask
+
+
+  /* ====================================================================== */
+  /* ====[                        GrpcRunnable                        ]==== */
+  /* ====================================================================== */
+
+  private interface GrpcRunnable {
+    /** Perform a grpcRunnable and return all the logs. */
+    String run(ContactTracingBlockingStub blockingStub, ContactTracingStub asyncStub) throws Exception;
   }
-}
+
+  /* ====[                  RegisterInfectedRunnable                  ]==== */
+
+  private static class RegisterInfectedRunnable implements GrpcRunnable {
+    @Override
+    public String run(ContactTracingBlockingStub blockingStub, ContactTracingStub asyncStub) throws Exception {
+      return registerInfected(409146138, 746188906, blockingStub);
+    }
+
+    /** Blocking unary call. Calls registerInfected and prints the response. */
+    private String registerInfected(int number, int key, ContactTracingBlockingStub blockingStub) throws StatusRuntimeException {
+      StringBuffer logs = new StringBuffer();
+      appendLogs(logs, "*** RegisterInfected: number={0} key={1}", number, key);
+
+      RegisterInfectedRequest request = RegisterInfectedRequest.newBuilder()
+              .setNumber(number)
+              .setKey(key)
+              .build();
+
+      RegisterInfectedResponse response;
+      response = blockingStub.registerInfected(request);
+      appendLogs(logs, "Registered new infected");
+      return logs.toString();
+    }
+
+  } // private static class RegisterInfectedRunnable
+
+
+  private static void appendLogs(StringBuffer logs, String msg, Object... params) {
+    if (params.length > 0) {
+      logs.append(MessageFormat.format(msg, params));
+    } else {
+      logs.append(msg);
+    }
+    logs.append("\n");
+  }
+
+} // public class ContactActivity

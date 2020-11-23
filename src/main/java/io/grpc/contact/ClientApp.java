@@ -65,8 +65,8 @@ public class ClientApp {
 				/********* infected ********/
 				if (command.equals("infected")){
 					/* send request */
-					InfectedRequest request = InfectedRequest.newBuilder().setNumber(133744).setKey(123456789).build();
-					InfectedResponse response = frontend.infected(request);
+					RegisterInfectedRequest request = RegisterInfectedRequest.newBuilder().setNumber(133744).setKey(123456789).build();
+					RegisterInfectedResponse response = frontend.registerInfected(request);
 					
 					/* print feedback */
 					System.out.println("Infected info stored");
@@ -84,7 +84,7 @@ public class ClientApp {
 					lastUpdate = Instant.now();
 
 					/* print response */
-					List<InfectedInfo> new_data = response.getInfectedInfosList();
+					List<Infected> new_data = response.getInfectedList();
 					
 					/* no updates */
 					if (new_data.size() == 0) System.out.println("No new infected data available");
@@ -92,7 +92,7 @@ public class ClientApp {
 					/* new updates */
 					else  {
 						System.out.println("New infected data received:");
-						for (InfectedInfo data : new_data)
+						for (Infected data : new_data)
 							System.out.printf("- Number: %s, Key: %s%n", data.getNumber(), data.getKey());
 					}
 	

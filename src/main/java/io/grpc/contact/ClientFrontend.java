@@ -21,10 +21,10 @@ public class ClientFrontend implements AutoCloseable {
 	}
 	
 	/**
-	 * Handles client 'infected' remote call.
+	 * Handles client 'registerInfected' remote call.
 	**/
-	public InfectedResponse infected(InfectedRequest request) {
-		return stub.infected(request);
+	public RegisterInfectedResponse registerInfected(RegisterInfectedRequest request) {
+		return stub.registerInfected(request);
 	}
 
 	/**

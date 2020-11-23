@@ -26,7 +26,7 @@ public class ServerImpl extends ContactTracingGrpc.ContactTracingImplBase {
     /* ====================================================================== */
     
 	@Override
-    public void infected(InfectedRequest request, StreamObserver<InfectedResponse> responseObserver) {
+    public void registerInfected(RegisterInfectedRequest request, StreamObserver<RegisterInfectedResponse> responseObserver) {
 		/* save time of reception */
 		Instant timestamp = Instant.now(); 
 
@@ -42,7 +42,7 @@ public class ServerImpl extends ContactTracingGrpc.ContactTracingImplBase {
 		storage.storeInfectedData(number, key, timestamp);
 
 		/* send response */
-		InfectedResponse response = InfectedResponse.newBuilder().build();
+		RegisterInfectedResponse response = RegisterInfectedResponse.newBuilder().build();
 		responseObserver.onNext(response);
 		responseObserver.onCompleted();
 
@@ -72,9 +72,9 @@ public class ServerImpl extends ContactTracingGrpc.ContactTracingImplBase {
 		for (Storage.InfectedData data : new_data) {
 			int number = data.getNumbers();
 			int key = data.getKeys();
-			InfectedInfo responseData = InfectedInfo.newBuilder().setNumber(number).setKey(key).build();
+			Infected responseData = Infected.newBuilder().setNumber(number).setKey(key).build();
 
-			response.addInfectedInfos(responseData);
+			response.addInfected(responseData);
 		}
 		
 		/* send response */
