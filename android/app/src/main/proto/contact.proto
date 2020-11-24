@@ -15,8 +15,8 @@ import "google/protobuf/timestamp.proto";
 
 /* ------- Register new infected ------- */
 message RegisterInfectedRequest {
-  int32 number = 1;
-  int32 key = 2;
+  repeated int32 number = 1;
+  repeated int32 key = 2;
 }
 
 message RegisterInfectedResponse {

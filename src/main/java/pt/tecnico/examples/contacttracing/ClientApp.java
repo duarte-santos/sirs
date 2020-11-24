@@ -65,8 +65,8 @@ public class ClientApp {
 				/********* infected ********/
 				if (command.equals("infected")){
 					/* send request */
-					RegisterInfectedRequest request = RegisterInfectedRequest.newBuilder().setNumber(133744).setKey(123456789).build();
-					RegisterInfectedResponse response = frontend.registerInfected(request);
+					//RegisterInfectedRequest request = RegisterInfectedRequest.newBuilder().setNumber(133744).setKey(123456789).build();
+					//RegisterInfectedResponse response = frontend.registerInfected(request);
 					
 					/* print feedback */
 					System.out.println("Infected info stored");

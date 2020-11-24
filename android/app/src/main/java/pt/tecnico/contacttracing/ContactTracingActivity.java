@@ -35,7 +35,11 @@ import java.io.StringWriter;
 import java.lang.ref.WeakReference;
 import java.text.MessageFormat;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -48,14 +52,15 @@ public class ContactTracingActivity extends AppCompatActivity {
 
   private EditText hostEdit;
   private EditText portEdit;
-  private Button startRouteGuideButton;
-  private Button exitRouteGuideButton;
-  private Button getFeatureButton;
-  private Button listFeaturesButton;
-  private Button recordRouteButton;
-  private Button routeChatButton;
+  private Button startContactTracingButton;
+  private Button exitContactTracingButton;
+  private Button registerInfectedButton;
+  private Button getInfectedButton;
   private TextView resultText;
 
+  // FIXME : Guardar persistentemente
+  static List<Integer> numbers = new ArrayList<Integer>();
+  static List<Integer> keys = new ArrayList<Integer>();
   static Instant lastUpdate;
 
 
@@ -65,16 +70,16 @@ public class ContactTracingActivity extends AppCompatActivity {
     setContentView(R.layout.activity_contact);
     hostEdit = (EditText) findViewById(R.id.host_edit_text);
     portEdit = (EditText) findViewById(R.id.port_edit_text);
-    startRouteGuideButton = (Button) findViewById(R.id.start_contact_tracing_button);
-    exitRouteGuideButton = (Button) findViewById(R.id.exit_contact_tracing_button);
-    getFeatureButton = (Button) findViewById(R.id.register_infected_button);
-    listFeaturesButton = (Button) findViewById(R.id.list_features_button);
-    recordRouteButton = (Button) findViewById(R.id.record_route_button);
-    routeChatButton = (Button) findViewById(R.id.route_chat_button);
+    startContactTracingButton = (Button) findViewById(R.id.start_contact_tracing_button);
+    exitContactTracingButton = (Button) findViewById(R.id.exit_contact_tracing_button);
+    registerInfectedButton = (Button) findViewById(R.id.register_infected_button);
+    getInfectedButton = (Button) findViewById(R.id.get_infected_button);
+    disableButtons();
+    startContactTracingButton.setEnabled(true);
     resultText = (TextView) findViewById(R.id.result_text);
     resultText.setMovementMethod(new ScrollingMovementMethod());
     lastUpdate = Instant.now();
-    disableButtons();
+
   }
 
 
@@ -87,8 +92,13 @@ public class ContactTracingActivity extends AppCompatActivity {
     channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
     hostEdit.setEnabled(false);
     portEdit.setEnabled(false);
-    startRouteGuideButton.setEnabled(false);
     enableButtons();
+    startContactTracingButton.setEnabled(false);
+
+    // Generate numbers every 5 minutes
+    Timer timer = new Timer();
+    timer.schedule(new GenerateNumber(), 0, 1000*60*5);
+
   }
 
   public void exitContactTracing(View view) {
@@ -96,7 +106,7 @@ public class ContactTracingActivity extends AppCompatActivity {
     disableButtons();
     hostEdit.setEnabled(true);
     portEdit.setEnabled(true);
-    startRouteGuideButton.setEnabled(true);
+    startContactTracingButton.setEnabled(true);
   }
 
 
@@ -118,19 +128,29 @@ public class ContactTracingActivity extends AppCompatActivity {
   }
 
   private void disableButtons() {
-    getFeatureButton.setEnabled(false);
-    listFeaturesButton.setEnabled(false);
-    recordRouteButton.setEnabled(false);
-    routeChatButton.setEnabled(false);
-    exitRouteGuideButton.setEnabled(false);
+    startContactTracingButton.setEnabled(false);
+    exitContactTracingButton.setEnabled(false);
+    registerInfectedButton.setEnabled(false);
+    getInfectedButton.setEnabled(false);
   }
 
   private void enableButtons() {
-    exitRouteGuideButton.setEnabled(true);
-    getFeatureButton.setEnabled(true);
-    listFeaturesButton.setEnabled(true);
-    recordRouteButton.setEnabled(true);
-    routeChatButton.setEnabled(true);
+    startContactTracingButton.setEnabled(true);
+    exitContactTracingButton.setEnabled(true);
+    registerInfectedButton.setEnabled(true);
+    getInfectedButton.setEnabled(true);
+  }
+
+  class GenerateNumber extends TimerTask {
+    public void run() {
+      Random rnd = new Random();
+      int n = 10000000 + rnd.nextInt(90000000);
+      numbers.add(n);
+
+      // FIXME : Generate Key
+      int key = 123456789;
+      keys.add(key);
+    }
   }
 
 
@@ -190,21 +210,23 @@ public class ContactTracingActivity extends AppCompatActivity {
   private static class RegisterInfectedRunnable implements GrpcRunnable {
     @Override
     public String run(ContactTracingBlockingStub blockingStub, ContactTracingStub asyncStub) throws Exception {
-      return registerInfected(409146138, 746188906, blockingStub);
+      return registerInfected(blockingStub);
     }
 
     /** Blocking unary call. Calls registerInfected and prints the response. */
-    private String registerInfected(int number, int key, ContactTracingBlockingStub blockingStub) throws StatusRuntimeException {
+    private String registerInfected(ContactTracingBlockingStub blockingStub) throws StatusRuntimeException {
       StringBuffer logs = new StringBuffer();
-      appendLogs(logs, "*** RegisterInfected: number={0} key={1}", number, key);
+      appendLogs(logs, "*** RegisterInfected ***");
 
-      RegisterInfectedRequest request = RegisterInfectedRequest.newBuilder()
-              .setNumber(number)
-              .setKey(key)
-              .build();
+      RegisterInfectedRequest.Builder request = RegisterInfectedRequest.newBuilder();
+      // Add numbers and keys to request
+      for (int i=0; i<numbers.size(); i++){
+        request.addNumber(numbers.get(i));
+        request.addKey(keys.get(i));
+      }
 
       RegisterInfectedResponse response;
-      response = blockingStub.registerInfected(request);
+      response = blockingStub.registerInfected(request.build());
       appendLogs(logs, "Registered new infected");
       return logs.toString();
     }

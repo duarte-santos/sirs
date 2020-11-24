@@ -9,7 +9,7 @@
 package pt.tecnico.examples.contacttracing;
 
 import java.time.Instant;
-import java.util.List;
+import java.util.*;
 
 import pt.tecnico.examples.contacttracing.*;
 import io.grpc.stub.StreamObserver;
@@ -32,14 +32,21 @@ public class ServerImpl extends ContactTracingGrpc.ContactTracingImplBase {
 
 		System.out.printf("%nReceived new infected user!%n");
 
+		List<Integer> numbers = new ArrayList<>();
+		List<Integer> keys =  new ArrayList<>();
+
 		/* parse client message */
-		int number = request.getNumber();
-		int key = request.getKey();
+		for (int n : request.getNumberList())
+			numbers.add(n);
 
-		System.out.printf("Content: number %d, key %d%n", number, key);
+		for (int n : request.getKeyList())
+			keys.add(n);
 
-		/* update storage */
-		storage.storeInfectedData(number, key, timestamp);
+		System.out.printf("Content: \n");
+		for (int i=0; i<numbers.size(); i++){
+			System.out.printf("number %d, key %d%n", numbers.get(i), keys.get(i));
+			storage.storeInfectedData(numbers.get(i), keys.get(i), timestamp);
+		}
 
 		/* send response */
 		RegisterInfectedResponse response = RegisterInfectedResponse.newBuilder().build();
