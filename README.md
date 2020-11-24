@@ -48,11 +48,16 @@ GRANT ALL PRIVILEGES ON `contact`.* TO 'server'@'localhost';
  ```
 NOTE: The run commands were only tested on windows
 
-## Client
+## Client (on PC)
 **Step 3: To run the client:**
  ```sh
  $ cd build/install/sirs/bin/ (unnecessary)
  $ ./contacttracing-client.bat localhost 50051
  ```
+
+## Client (on Android)
+
+ - Open the app (If you're on a PC, open the emulator through Android Studio - directory `android`)
+ - Fill ip = `10.0.2.2` and port = `50051` and press `Start Contact Tracing`
 
  NOTE: The run commands were only tested on windows

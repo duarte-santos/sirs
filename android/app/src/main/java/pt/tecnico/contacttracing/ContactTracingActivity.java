@@ -28,10 +28,14 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import com.google.protobuf.Timestamp;
+
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.ref.WeakReference;
 import java.text.MessageFormat;
+import java.time.Instant;
+import java.util.List;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -52,6 +56,8 @@ public class ContactTracingActivity extends AppCompatActivity {
   private Button routeChatButton;
   private TextView resultText;
 
+  static Instant lastUpdate;
+
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -67,6 +73,7 @@ public class ContactTracingActivity extends AppCompatActivity {
     routeChatButton = (Button) findViewById(R.id.route_chat_button);
     resultText = (TextView) findViewById(R.id.result_text);
     resultText.setMovementMethod(new ScrollingMovementMethod());
+    lastUpdate = Instant.now();
     disableButtons();
   }
 
@@ -97,6 +104,12 @@ public class ContactTracingActivity extends AppCompatActivity {
     setResultText("");
     disableButtons();
     new GrpcTask(new RegisterInfectedRunnable(), channel, this).execute();
+  }
+
+  public void getInfected(View view) {
+    setResultText("");
+    disableButtons();
+    new GrpcTask(new GetInfectedRunnable(), channel, this).execute();
   }
 
 
@@ -199,6 +212,47 @@ public class ContactTracingActivity extends AppCompatActivity {
   } // private static class RegisterInfectedRunnable
 
 
+  /* ====[                       GetInfectedRunnable                       ]==== */
+
+  private static class GetInfectedRunnable implements GrpcRunnable {
+
+    @Override
+    public String run(ContactTracingBlockingStub blockingStub, ContactTracingStub asyncStub) throws Exception {
+      return getInfected(blockingStub);
+    }
+
+    /** Blocking unary call. Calls registerInfected and prints the response. */
+    private String getInfected(ContactTracingBlockingStub blockingStub) throws StatusRuntimeException {
+      StringBuffer logs = new StringBuffer();
+      appendLogs(logs, "*** GetInfected started ***");
+
+      GetInfectedRequest request = GetInfectedRequest.newBuilder()
+              .setLastUpdate( instantToTimestamp(lastUpdate) )
+              .build();
+
+      GetInfectedResponse response = blockingStub.getInfected(request);
+      lastUpdate = Instant.now();
+
+      /* get response */
+      List<Infected> new_data = response.getInfectedList();
+
+      /* no updates */
+      if (new_data.size() == 0){
+        appendLogs(logs, "No new infected data available");
+        return logs.toString();
+      }
+
+      /* return new updates */
+      appendLogs(logs, "New infected data received:");
+      for (Infected data : new_data)
+        appendLogs(logs, "- Number: {0}, Key: {1}\n", data.getNumber(), data.getKey());
+
+      return logs.toString();
+
+    }
+
+  } // private static class GetInfectedRunnable
+
   private static void appendLogs(StringBuffer logs, String msg, Object... params) {
     if (params.length > 0) {
       logs.append(MessageFormat.format(msg, params));
@@ -206,6 +260,15 @@ public class ContactTracingActivity extends AppCompatActivity {
       logs.append(msg);
     }
     logs.append("\n");
+  }
+
+  private static Timestamp instantToTimestamp(Instant instant) {
+    /* setup grpc timestamp */
+    Timestamp timestamp = Timestamp.newBuilder()
+            .setSeconds(instant.getEpochSecond())
+            .setNanos(instant.getNano())
+            .build();
+    return timestamp;
   }
 
 } // public class ContactTracingActivity
