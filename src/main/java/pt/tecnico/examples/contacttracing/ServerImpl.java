@@ -32,20 +32,13 @@ public class ServerImpl extends ContactTracingGrpc.ContactTracingImplBase {
 
 		System.out.printf("%nReceived new infected user!%n");
 
-		List<Integer> numbers = new ArrayList<>();
-		List<Integer> keys =  new ArrayList<>();
-
 		/* parse client message */
-		for (int n : request.getNumberList())
-			numbers.add(n);
-
-		for (int n : request.getKeyList())
-			keys.add(n);
+		List<Infected> new_data = request.getInfectedList();
 
 		System.out.printf("Content: \n");
-		for (int i=0; i<numbers.size(); i++){
-			System.out.printf("number %d, key %d%n", numbers.get(i), keys.get(i));
-			storage.storeInfectedData(numbers.get(i), keys.get(i), timestamp);
+		for (Infected i : new_data){
+			System.out.printf("number %d, key %d%n", i.getNumber(), i.getKey());
+			storage.storeInfectedData(i.getNumber(), i.getKey(), timestamp);
 		}
 
 		/* send response */

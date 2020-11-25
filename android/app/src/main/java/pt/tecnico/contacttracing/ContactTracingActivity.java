@@ -49,13 +49,17 @@ import pt.tecnico.examples.contacttracing.ContactTracingGrpc.*;
 
 public class ContactTracingActivity extends AppCompatActivity {
   private ManagedChannel channel;
+  private ManagedChannel channelHealth;
 
   private EditText hostEdit;
   private EditText portEdit;
+  private EditText hostHealthEdit;
+  private EditText portHealthEdit;
   private Button startContactTracingButton;
   private Button exitContactTracingButton;
   private Button registerInfectedButton;
   private Button getInfectedButton;
+  private Button generateSignatureButton;
   private TextView resultText;
 
   // FIXME : Guardar persistentemente
@@ -70,10 +74,13 @@ public class ContactTracingActivity extends AppCompatActivity {
     setContentView(R.layout.activity_contact);
     hostEdit = (EditText) findViewById(R.id.host_edit_text);
     portEdit = (EditText) findViewById(R.id.port_edit_text);
+    hostHealthEdit = (EditText) findViewById(R.id.health_host_edit_text);
+    portHealthEdit = (EditText) findViewById(R.id.health_port_edit_text);
     startContactTracingButton = (Button) findViewById(R.id.start_contact_tracing_button);
     exitContactTracingButton = (Button) findViewById(R.id.exit_contact_tracing_button);
     registerInfectedButton = (Button) findViewById(R.id.register_infected_button);
     getInfectedButton = (Button) findViewById(R.id.get_infected_button);
+    generateSignatureButton = (Button) findViewById(R.id.generate_signature_button);
     disableButtons();
     startContactTracingButton.setEnabled(true);
     resultText = (TextView) findViewById(R.id.result_text);
@@ -122,6 +129,22 @@ public class ContactTracingActivity extends AppCompatActivity {
     new GrpcTask(new GetInfectedRunnable(), channel, this).execute();
   }
 
+  public void generateSignature(View view) {
+    // Connect to health authority
+    String host = hostHealthEdit.getText().toString();
+    String portStr = portHealthEdit.getText().toString();
+    int port = TextUtils.isEmpty(portStr) ? 0 : Integer.valueOf(portStr);
+    ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE))
+            .hideSoftInputFromWindow(hostHealthEdit.getWindowToken(), 0);
+    channelHealth = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
+    hostHealthEdit.setEnabled(false);
+    portHealthEdit.setEnabled(false);
+
+    setResultText("");
+    disableButtons();
+    new GrpcTask(new GenerateSignatureRunnable(), channelHealth, this).execute();
+  }
+
 
   private void setResultText(String text) {
     resultText.setText(text);
@@ -132,6 +155,7 @@ public class ContactTracingActivity extends AppCompatActivity {
     exitContactTracingButton.setEnabled(false);
     registerInfectedButton.setEnabled(false);
     getInfectedButton.setEnabled(false);
+    generateSignatureButton.setEnabled(false);
   }
 
   private void enableButtons() {
@@ -139,6 +163,7 @@ public class ContactTracingActivity extends AppCompatActivity {
     exitContactTracingButton.setEnabled(true);
     registerInfectedButton.setEnabled(true);
     getInfectedButton.setEnabled(true);
+    generateSignatureButton.setEnabled(true);
   }
 
   class GenerateNumber extends TimerTask {
@@ -218,11 +243,13 @@ public class ContactTracingActivity extends AppCompatActivity {
       StringBuffer logs = new StringBuffer();
       appendLogs(logs, "*** RegisterInfected ***");
 
-      RegisterInfectedRequest.Builder request = RegisterInfectedRequest.newBuilder();
       // Add numbers and keys to request
-      for (int i=0; i<numbers.size(); i++){
-        request.addNumber(numbers.get(i));
-        request.addKey(keys.get(i));
+      RegisterInfectedRequest.Builder request = RegisterInfectedRequest.newBuilder();
+      for (int i = 0; i < numbers.size(); i++) {
+        int number = numbers.get(i);
+        int key = keys.get(i);
+        Infected responseData = Infected.newBuilder().setNumber(number).setKey(key).build();
+        request.addInfected(responseData);
       }
 
       RegisterInfectedResponse response;
@@ -274,6 +301,39 @@ public class ContactTracingActivity extends AppCompatActivity {
     }
 
   } // private static class GetInfectedRunnable
+
+
+
+  /* ====[                  GenerateSignatureRunnable                  ]==== */
+
+  private static class GenerateSignatureRunnable implements GrpcRunnable {
+    @Override
+    public String run(ContactTracingBlockingStub blockingStub, ContactTracingStub asyncStub) throws Exception {
+      return generateSignature(blockingStub);
+    }
+
+    /** Blocking unary call. Calls registerInfected and prints the response. */
+    private String generateSignature(ContactTracingBlockingStub blockingStub) throws StatusRuntimeException {
+      StringBuffer logs = new StringBuffer();
+      appendLogs(logs, "*** Generating Signature ***");
+
+      GenerateSignatureRequest.Builder request = GenerateSignatureRequest.newBuilder();
+      for (int i = 0; i < numbers.size(); i++) {
+        int number = numbers.get(i);
+        int key = keys.get(i);
+        Infected responseData = Infected.newBuilder().setNumber(number).setKey(key).build();
+
+        request.addInfected(responseData);
+      }
+
+      GenerateSignatureResponse response;
+      response = blockingStub.generateSignature(request.build());
+      appendLogs(logs, "Received signature: {0}", response.getSignature());
+      return logs.toString();
+    }
+
+  } // private static class GenerateSignatureRunnable
+
 
   private static void appendLogs(StringBuffer logs, String msg, Object... params) {
     if (params.length > 0) {

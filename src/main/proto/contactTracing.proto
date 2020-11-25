@@ -12,11 +12,16 @@ package contacttracing;
 
 import "google/protobuf/timestamp.proto";
 
+/* --------- Infected Data --------- */
+message Infected {
+  int32 number = 1;
+  int32 key = 2;
+}
+
 
 /* ------- Register new infected ------- */
 message RegisterInfectedRequest {
-  repeated int32 number = 1;
-  repeated int32 key = 2;
+  repeated Infected infected = 1;
 }
 
 message RegisterInfectedResponse {
@@ -25,11 +30,6 @@ message RegisterInfectedResponse {
 }
 
 /* -------- Get recent infected -------- */
-message Infected {
-  int32 number = 1;
-  int32 key = 2;
-}
-
 message GetInfectedRequest {
   google.protobuf.Timestamp lastUpdate = 1;
 }
@@ -39,6 +39,15 @@ message GetInfectedResponse {
   repeated Infected infected = 1;
 }
 
+/* -------- Generate Signature -------- */
+message GenerateSignatureRequest {
+  repeated Infected infected = 1;
+}
+
+message GenerateSignatureResponse {
+  int32 signature = 1;
+}
+
 
 /* ---------- Tracing service ---------- */
 service ContactTracing {
@@ -46,4 +55,6 @@ service ContactTracing {
   rpc registerInfected(RegisterInfectedRequest) returns (RegisterInfectedResponse);
   // Get recent infected
   rpc getInfected(GetInfectedRequest) returns (GetInfectedResponse);
+  // Generate Signature (health authority)
+  rpc generateSignature(GenerateSignatureRequest) returns (GenerateSignatureResponse);
 }

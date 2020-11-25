@@ -63,6 +63,13 @@ task Server(type: CreateStartScripts) {
     classpath = startScripts.classpath
 }
 
+task Health(type: CreateStartScripts) {
+    mainClassName = 'pt.tecnico.examples.contacttracing.HealthApp'
+    applicationName = 'contacttracing-health'
+    outputDir = new File(project.buildDir, 'tmp')
+    classpath = startScripts.classpath
+}
+
 task Client(type: CreateStartScripts) {
     mainClassName = 'pt.tecnico.examples.contacttracing.ClientApp'
     applicationName = 'contacttracing-client'
@@ -70,8 +77,10 @@ task Client(type: CreateStartScripts) {
     classpath = startScripts.classpath
 }
 
+
 applicationDistribution.into('bin') {
     from(Server)
+    from(Health)
     from(Client)
     fileMode = 0755
 }
