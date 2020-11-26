@@ -23,6 +23,11 @@ android {
         textReport true
         textOutput "stdout"
     }
+    packagingOptions {
+        exclude 'META-INF/DEPENDENCIES'
+        exclude 'META-INF/INDEX.LIST'
+        exclude 'META-INF/io.netty.versions.properties'
+    }
 }
 
 protobuf {
@@ -44,6 +49,7 @@ protobuf {
     }
 }
 
+
 dependencies {
     implementation 'com.android.support:appcompat-v7:27.1.1'
 
@@ -51,5 +57,8 @@ dependencies {
     implementation 'io.grpc:grpc-okhttp:1.33.1' // CURRENT_GRPC_VERSION
     implementation 'io.grpc:grpc-protobuf-lite:1.33.1' // CURRENT_GRPC_VERSION
     implementation 'io.grpc:grpc-stub:1.33.1' // CURRENT_GRPC_VERSION
+    implementation 'io.grpc:grpc-core:1.33.1' // CURRENT_GRPC_VERSION
     implementation 'org.apache.tomcat:annotations-api:6.0.53'
+    runtimeOnly 'io.netty:netty-tcnative-boringssl-static:2.0.34.Final'
+    runtimeOnly "io.grpc:grpc-netty-shaded:1.33.1"
 }

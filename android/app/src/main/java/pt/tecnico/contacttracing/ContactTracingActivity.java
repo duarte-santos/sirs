@@ -40,16 +40,23 @@ import java.util.List;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.io.File;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
+import io.grpc.okhttp.OkHttpChannelBuilder;
 import pt.tecnico.examples.contacttracing.*;
 import pt.tecnico.examples.contacttracing.ContactTracingGrpc.*;
 
 public class ContactTracingActivity extends AppCompatActivity {
   private ManagedChannel channel;
   private ManagedChannel channelHealth;
+
+  static private String trustCertCollectionFilePath;
 
   private EditText hostEdit;
   private EditText portEdit;
@@ -87,16 +94,13 @@ public class ContactTracingActivity extends AppCompatActivity {
     resultText.setMovementMethod(new ScrollingMovementMethod());
     lastUpdate = Instant.now();
 
+    trustCertCollectionFilePath = "res/health.csr";
+
   }
 
 
   public void startContactTracing(View view) {
-    String host = hostEdit.getText().toString();
-    String portStr = portEdit.getText().toString();
-    int port = TextUtils.isEmpty(portStr) ? 0 : Integer.valueOf(portStr);
-    ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE))
-            .hideSoftInputFromWindow(hostEdit.getWindowToken(), 0);
-    channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
+    connectServer();
     hostEdit.setEnabled(false);
     portEdit.setEnabled(false);
     enableButtons();
@@ -116,6 +120,7 @@ public class ContactTracingActivity extends AppCompatActivity {
     startContactTracingButton.setEnabled(true);
   }
 
+  /* --------- DOMAIN METHODS ---------- */
 
   public void registerInfected(View view) {
     setResultText("");
@@ -130,13 +135,12 @@ public class ContactTracingActivity extends AppCompatActivity {
   }
 
   public void generateSignature(View view) {
-    // Connect to health authority
-    String host = hostHealthEdit.getText().toString();
-    String portStr = portHealthEdit.getText().toString();
-    int port = TextUtils.isEmpty(portStr) ? 0 : Integer.valueOf(portStr);
-    ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE))
-            .hideSoftInputFromWindow(hostHealthEdit.getWindowToken(), 0);
-    channelHealth = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
+    try {
+      connectHealthAuthority();
+    } catch (SSLException e){
+      setResultText("Couldn't connect to Health Authority: " + e.getMessage());
+    }
+
     hostHealthEdit.setEnabled(false);
     portHealthEdit.setEnabled(false);
 
@@ -145,6 +149,43 @@ public class ContactTracingActivity extends AppCompatActivity {
     new GrpcTask(new GenerateSignatureRunnable(), channelHealth, this).execute();
   }
 
+  /* --------- CONNECT METHODS ---------- */
+
+  public void connectServer(){
+    String host = hostEdit.getText().toString();
+    String portStr = portEdit.getText().toString();
+    int port = TextUtils.isEmpty(portStr) ? 0 : Integer.valueOf(portStr);
+    ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE))
+            .hideSoftInputFromWindow(hostEdit.getWindowToken(), 0);
+    channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
+  }
+
+  public void connectHealthAuthority() throws SSLException{
+    String host = hostHealthEdit.getText().toString();
+    String portStr = portHealthEdit.getText().toString();
+    int port = TextUtils.isEmpty(portStr) ? 0 : Integer.valueOf(portStr);
+    ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE))
+            .hideSoftInputFromWindow(hostHealthEdit.getWindowToken(), 0);
+
+    /* ----
+    channelHealth = OkHttpChannelBuilder.forAddress(host, port)
+            .sslSocketFactory(sslContext.getSocketFactory())
+            .build();
+
+     */
+
+  }
+
+  /*
+  private SslContext buildSslContext() throws SSLException {
+    SslContextBuilder builder = GrpcSslContexts.forClient();
+    builder.trustManager(new File(trustCertCollectionFilePath));
+    return builder.build();
+  }
+  */
+
+
+  /* ---------- AUXILIARY METHODS ----------- */
 
   private void setResultText(String text) {
     resultText.setText(text);
