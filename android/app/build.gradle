@@ -59,6 +59,7 @@ dependencies {
     implementation 'io.grpc:grpc-stub:1.33.1' // CURRENT_GRPC_VERSION
     implementation 'io.grpc:grpc-core:1.33.1' // CURRENT_GRPC_VERSION
     implementation 'org.apache.tomcat:annotations-api:6.0.53'
+    implementation 'com.google.android.gms:play-services:12.0.1'
     runtimeOnly 'io.netty:netty-tcnative-boringssl-static:2.0.34.Final'
     runtimeOnly "io.grpc:grpc-netty-shaded:1.33.1"
 }

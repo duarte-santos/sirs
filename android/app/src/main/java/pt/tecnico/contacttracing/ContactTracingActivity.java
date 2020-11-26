@@ -30,6 +30,7 @@ import android.widget.TextView;
 
 import com.google.protobuf.Timestamp;
 
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.ref.WeakReference;
@@ -55,8 +56,6 @@ import pt.tecnico.examples.contacttracing.ContactTracingGrpc.*;
 public class ContactTracingActivity extends AppCompatActivity {
   private ManagedChannel channel;
   private ManagedChannel channelHealth;
-
-  static private String trustCertCollectionFilePath;
 
   private EditText hostEdit;
   private EditText portEdit;
@@ -93,9 +92,6 @@ public class ContactTracingActivity extends AppCompatActivity {
     resultText = (TextView) findViewById(R.id.result_text);
     resultText.setMovementMethod(new ScrollingMovementMethod());
     lastUpdate = Instant.now();
-
-    trustCertCollectionFilePath = "res/health.csr";
-
   }
 
 
@@ -167,23 +163,18 @@ public class ContactTracingActivity extends AppCompatActivity {
     ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE))
             .hideSoftInputFromWindow(hostHealthEdit.getWindowToken(), 0);
 
-    /* ----
-    channelHealth = OkHttpChannelBuilder.forAddress(host, port)
-            .sslSocketFactory(sslContext.getSocketFactory())
-            .build();
-
-     */
+    InputStream is = null;
+    try {
+      is = getResources().getAssets().open("health.csr");
+      channelHealth = TLSChannelBuilder.buildTls(
+              host, port, is);
+      is.close();
+    } catch (Throwable e) {
+      e.printStackTrace();
+    }
+    System.out.println(channelHealth.toString());
 
   }
-
-  /*
-  private SslContext buildSslContext() throws SSLException {
-    SslContextBuilder builder = GrpcSslContexts.forClient();
-    builder.trustManager(new File(trustCertCollectionFilePath));
-    return builder.build();
-  }
-  */
-
 
   /* ---------- AUXILIARY METHODS ----------- */
 
