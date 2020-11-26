@@ -15,18 +15,16 @@ import java.io.IOException;
 import java.io.File;
 
 public class HealthApp {
-	private static final String SERVER_USAGE = "Usage: java %s port certChainFilePath privateKeyFilePath%n";
+	private static final String SERVER_USAGE = "Usage: java %s port %n";
 	private static Server server;	
 	private static int port;
-	private static String certChainFilePath;
-	private static String privateKeyFilePath;
 	
 	/* Main */
 	public static void main(String[] args) {
         System.out.println("\n[" + HealthApp.class.getSimpleName() + "]");
 
 		/* Check arguments amount */
-		if (args.length < 3) {
+		if (args.length < 1) {
 			System.err.println("Invalid amount of arguments!");
 			System.err.printf(SERVER_USAGE, HealthApp.class.getName());
 			return;
@@ -35,19 +33,14 @@ public class HealthApp {
 		try {
             /* Initialize arguments */
 			port = Integer.parseInt(args[0]);
-			certChainFilePath = args[1];
-			privateKeyFilePath = args[2];
 			
 			/* Create server implementation */
 			HealthImpl HealthImpl = new HealthImpl();
 			final BindableService impl = (BindableService) HealthImpl;
 			
 			/* Create and start the new server to listen on port - server threads running in background */
-			server = NettyServerBuilder.forPort(port)
-                .addService(impl)
-                .sslContext(getSslContextBuilder().build()) // TLS Implementation
-                .build()
-                .start();	
+			server = ServerBuilder.forPort(port).addService(impl).build();	
+			server.start();
 			System.out.printf("Server listening on port %d %n", port);
 			
 			/* Register an instance of 'Finalize' as shutdown hook */
@@ -71,13 +64,6 @@ public class HealthApp {
 		}
 		
 	}
-	
-	/* TLS Implementation */
-	private static SslContextBuilder getSslContextBuilder() {
-        SslContextBuilder sslClientContextBuilder = SslContextBuilder.forServer(new File(certChainFilePath),
-                new File(privateKeyFilePath));
-        return GrpcSslContexts.configure(sslClientContextBuilder);
-    }
     	
 	/* Class called when the program is exiting - used as shutdown hook */
 	static class Finalize extends Thread {

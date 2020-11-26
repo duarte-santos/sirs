@@ -56,8 +56,6 @@ public class ContactTracingActivity extends AppCompatActivity {
   private ManagedChannel channel;
   private ManagedChannel channelHealth;
 
-  static private String trustCertCollectionFilePath;
-
   private EditText hostEdit;
   private EditText portEdit;
   private EditText hostHealthEdit;
@@ -93,8 +91,6 @@ public class ContactTracingActivity extends AppCompatActivity {
     resultText = (TextView) findViewById(R.id.result_text);
     resultText.setMovementMethod(new ScrollingMovementMethod());
     lastUpdate = Instant.now();
-
-    trustCertCollectionFilePath = "res/health.csr";
 
   }
 
@@ -135,12 +131,7 @@ public class ContactTracingActivity extends AppCompatActivity {
   }
 
   public void generateSignature(View view) {
-    try {
-      connectHealthAuthority();
-    } catch (SSLException e){
-      setResultText("Couldn't connect to Health Authority: " + e.getMessage());
-    }
-
+    connectHealthAuthority();
     hostHealthEdit.setEnabled(false);
     portHealthEdit.setEnabled(false);
 
@@ -160,30 +151,14 @@ public class ContactTracingActivity extends AppCompatActivity {
     channel = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
   }
 
-  public void connectHealthAuthority() throws SSLException{
+  public void connectHealthAuthority(){
     String host = hostHealthEdit.getText().toString();
     String portStr = portHealthEdit.getText().toString();
     int port = TextUtils.isEmpty(portStr) ? 0 : Integer.valueOf(portStr);
     ((InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE))
             .hideSoftInputFromWindow(hostHealthEdit.getWindowToken(), 0);
-
-    /* ----
-    channelHealth = OkHttpChannelBuilder.forAddress(host, port)
-            .sslSocketFactory(sslContext.getSocketFactory())
-            .build();
-
-     */
-
+    channelHealth = ManagedChannelBuilder.forAddress(host, port).usePlaintext().build();
   }
-
-  /*
-  private SslContext buildSslContext() throws SSLException {
-    SslContextBuilder builder = GrpcSslContexts.forClient();
-    builder.trustManager(new File(trustCertCollectionFilePath));
-    return builder.build();
-  }
-  */
-
 
   /* ---------- AUXILIARY METHODS ----------- */
 
