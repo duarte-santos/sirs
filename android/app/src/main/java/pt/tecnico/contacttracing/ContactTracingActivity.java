@@ -36,6 +36,7 @@ import java.lang.ref.WeakReference;
 import java.text.MessageFormat;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Random;
 import java.util.Timer;
@@ -44,6 +45,13 @@ import java.io.File;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
+
+import java.security.GeneralSecurityException;
+import java.security.Key;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -71,9 +79,20 @@ public class ContactTracingActivity extends AppCompatActivity {
 
   // FIXME : Guardar persistentemente
   static List<Integer> numbers = new ArrayList<Integer>();
-  static List<Integer> keys = new ArrayList<Integer>();
+  static List<KeyPair> keys = new ArrayList<KeyPair>();
   static Instant lastUpdate;
 
+  public static String getEncodedPublicKey(int i){
+    PublicKey pubKey = keys.get(i).getPublic();
+    byte[] encodedPubKey = pubKey.getEncoded();
+    return Base64.getEncoder().encodeToString(encodedPubKey);
+  }
+
+  public static String getEncodedPrivateKey(int i){
+    PrivateKey privKey = keys.get(i).getPrivate();
+    byte[] encodedPrivKey = privKey.getEncoded();
+    return Base64.getEncoder().encodeToString(encodedPrivKey);
+  }
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -213,10 +232,33 @@ public class ContactTracingActivity extends AppCompatActivity {
       int n = 10000000 + rnd.nextInt(90000000);
       numbers.add(n);
 
-      // FIXME : Generate Key
-      int key = 123456789;
+      KeyPair key = generateKeyPair();
       keys.add(key);
     }
+  }
+
+  public KeyPair generateKeyPair() {
+      try {
+          String feedback = "\nGenerating RSA key ...\n";
+          setResultText(feedback);
+
+          KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+          keyGen.initialize(1024);
+          KeyPair keyPair = keyGen.generateKeyPair();
+        
+          /*feedback += "Private Key:\n"
+                   + Base64.getEncoder().encodeToString( keyPair.getPrivate().getEncoded() ) + "\n"
+                   + "Public Key:\n"
+                   + Base64.getEncoder().encodeToString( keyPair.getPublic().getEncoded() ) + "\n";
+          setResultText(feedback);*/
+
+          return keyPair;
+
+      } catch (GeneralSecurityException e) {
+          setResultText("Couldn't generate the key pair: " + e.getMessage());
+      }
+
+      return null;
   }
 
 
@@ -288,7 +330,7 @@ public class ContactTracingActivity extends AppCompatActivity {
       RegisterInfectedRequest.Builder request = RegisterInfectedRequest.newBuilder();
       for (int i = 0; i < numbers.size(); i++) {
         int number = numbers.get(i);
-        int key = keys.get(i);
+        String key = getEncodedPublicKey(i);
         Infected responseData = Infected.newBuilder().setNumber(number).setKey(key).build();
         request.addInfected(responseData);
       }
@@ -361,7 +403,7 @@ public class ContactTracingActivity extends AppCompatActivity {
       GenerateSignatureRequest.Builder request = GenerateSignatureRequest.newBuilder();
       for (int i = 0; i < numbers.size(); i++) {
         int number = numbers.get(i);
-        int key = keys.get(i);
+        String key = getEncodedPublicKey(i);
         Infected responseData = Infected.newBuilder().setNumber(number).setKey(key).build();
 
         request.addInfected(responseData);

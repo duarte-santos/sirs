@@ -37,7 +37,7 @@ public class ServerImpl extends ContactTracingGrpc.ContactTracingImplBase {
 
 		System.out.printf("Content: \n");
 		for (Infected i : new_data){
-			System.out.printf("number %d, key %d%n", i.getNumber(), i.getKey());
+			System.out.printf("number %d, key %s%n", i.getNumber(), i.getKey());
 			storage.storeInfectedData(i.getNumber(), i.getKey(), timestamp);
 		}
 
@@ -71,7 +71,7 @@ public class ServerImpl extends ContactTracingGrpc.ContactTracingImplBase {
 		GetInfectedResponse.Builder response = GetInfectedResponse.newBuilder();
 		for (Storage.InfectedData data : new_data) {
 			int number = data.getNumbers();
-			int key = data.getKeys();
+			String key = data.getKeys();
 			Infected responseData = Infected.newBuilder().setNumber(number).setKey(key).build();
 
 			response.addInfected(responseData);
