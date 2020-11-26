@@ -76,7 +76,7 @@ public class Storage {
 			// Create table data, if it doesn't exist
 			String sqlCreate = "CREATE TABLE IF NOT EXISTS " + this.tableName
 				+ "  (number          INT PRIMARY KEY,"
-				+ "   pkey            CHAR(100),"
+				+ "   pkey            BLOB,"
 				+ "   seconds         LONG,"
 				+ "   nanos           LONG);";
 				

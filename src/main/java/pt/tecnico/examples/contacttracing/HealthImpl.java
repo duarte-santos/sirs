@@ -40,7 +40,7 @@ public class HealthImpl extends ContactTracingGrpc.ContactTracingImplBase {
 
 		System.out.printf("Content: \n");
 		for (Infected i : new_data){
-			System.out.printf("number %d, key %d%n", i.getNumber(), i.getKey());
+			System.out.printf("number %d, key %s%n", i.getNumber(), i.getKey());
 		}
 
 		/* send response */
