@@ -20,10 +20,10 @@ public class Storage {
 	// Class InfectedData
 	public class InfectedData {
 		private int _number;
-		private int _key;
+		private String _key;
 		private Instant _timestamp;
 
-		InfectedData(int number, int key, Instant timestamp) {
+		InfectedData(int number, String key, Instant timestamp) {
 			_number = number;
 			_key = key;
 			_timestamp = timestamp;
@@ -33,7 +33,7 @@ public class Storage {
 			return _number;
 		}
 
-		public int getKeys(){
+		public String getKeys(){
 			return _key;
 		}
 
@@ -76,7 +76,7 @@ public class Storage {
 			// Create table data, if it doesn't exist
 			String sqlCreate = "CREATE TABLE IF NOT EXISTS " + this.tableName
 				+ "  (number          INT PRIMARY KEY,"
-				+ "   pkey            INT,"
+				+ "   pkey            CHAR(100),"
 				+ "   seconds         LONG,"
 				+ "   nanos           LONG);";
 				
@@ -100,7 +100,7 @@ public class Storage {
 			
 			while (rs.next()) {
 				int number = rs.getInt("number");
-				int key = rs.getInt("pkey");
+				String key = rs.getString("pkey");
 				long seconds = rs.getLong("seconds");
 				long nanos = rs.getLong("nanos");
 				Instant timestamp = Instant.ofEpochSecond(seconds, nanos);
@@ -125,7 +125,7 @@ public class Storage {
 		
 	}
 
-	public void storeInfectedData(int number, int key, Instant timestamp) {
+	public void storeInfectedData(int number, String key, Instant timestamp) {
 
 		long seconds = timestamp.getEpochSecond() ;
 		long nanos = timestamp.getNano();
@@ -133,9 +133,10 @@ public class Storage {
 		try{
 			String statement = "INSERT INTO " + this.tableName + " VALUES("
 				+ Integer.toString(number) + ","
-				+ Integer.toString(key) +    ","
+				+ "'" + key + "'" + 		 ","
 				+ Long.toString(seconds) +   ","
-				+ Long.toString(nanos) +     ");";
+				+ Long.toString(nanos) +     ")"
+				+ " ON DUPLICATE KEY UPDATE number=number;";
 			
 			stmt = conn.createStatement();
 			stmt.executeUpdate(statement);
