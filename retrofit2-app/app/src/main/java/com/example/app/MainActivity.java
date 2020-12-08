@@ -25,6 +25,26 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getHello();
+        saveInfected();
+    }
+
+    private void saveInfected(){
+        ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class);
+        Call<Object> call = apiInterface.saveInfected(new Integer(12345));
+
+        call.enqueue(new Callback<Object>() {
+            @Override
+            public void onResponse(Call<Object> call, Response<Object> response) {
+                System.out.println("I received it!");
+                System.out.println(response.body());
+            }
+
+            @Override
+            public void onFailure(Call<Object> call, Throwable t) {
+                System.out.println("I did not received it :(");
+                t.printStackTrace();
+            }
+        });
     }
 
     private void getHello(){
