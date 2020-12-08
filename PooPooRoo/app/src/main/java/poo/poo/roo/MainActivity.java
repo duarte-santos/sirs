@@ -8,12 +8,22 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.le.AdvertiseCallback;
+import android.bluetooth.le.AdvertiseData;
+import android.bluetooth.le.AdvertiseSettings;
+import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
+import static poo.poo.roo.Constants.*;
 
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
@@ -21,10 +31,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private static final String TAG = MainActivity.class.getSimpleName();
 
     private boolean _Scanning = false;
+    private boolean _Advertising = false;
     private Scanner _bleScanner;
 
+    private BluetoothLeAdvertiser _bleAdvertiser;
+    private AdvertiseCallback _bleAdvertiseCallback;
+
     private Button _ScanButton;
-    //private Button _AdvertiseButton;
+    private Button _AdvertiseButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,10 +47,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setTitle("Contact Tracing");
 
         _ScanButton = (Button) findViewById(R.id.scan_btn);
-        //_AdvertiseButton = (Button) findViewById(R.id.advertise_btn);
+        _AdvertiseButton = (Button) findViewById(R.id.advertise_btn);
 
         _ScanButton.setOnClickListener(this);
-        //_AdvertiseButton.setOnClickListener(this);
+        _AdvertiseButton.setOnClickListener(this);
 
         if (savedInstanceState == null) {
             BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -69,7 +83,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             } else {
                 // Prompt user to turn on Bluetooth.
                 Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                startActivityForResult(enableBtIntent, Constants.REQUEST_ENABLE_BT);
+                startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
             }
         } else {
             // Bluetooth is not supported.
@@ -90,7 +104,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         //Prompt the user once explanation has been shown
-                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{ Manifest.permission.ACCESS_COARSE_LOCATION }, Constants.REQUEST_LOCATION);
+                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{ Manifest.permission.ACCESS_COARSE_LOCATION }, REQUEST_LOCATION);
                     }
                 })
                 .create()
@@ -100,7 +114,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        if (requestCode == Constants.REQUEST_LOCATION) {
+        if (requestCode == REQUEST_LOCATION) {
             // If request is cancelled, the result arrays are empty.
             if (grantResults.length == 0 || grantResults[0] != PackageManager.PERMISSION_GRANTED) {
                 // permission denied, boo! Disable the functionality that depends on this permission.
@@ -118,11 +132,60 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (_Scanning){
             _Scanning = false;
             _bleScanner.stopScanning();
-            _ScanButton.setText(R.string.bt_scan);
+            _ScanButton.setText(R.string.bt_start_scan);
         } else {
             _Scanning = true;
             _bleScanner.startScanning();
-            _ScanButton.setText(R.string.bt_stop);
+            _ScanButton.setText(R.string.bt_stop_scan);
+        }
+    }
+
+    public void trueStuff() {
+        _bleAdvertiser = BluetoothAdapter.getDefaultAdapter().getBluetoothLeAdvertiser();
+        AdvertiseSettings settings = new AdvertiseSettings.Builder()
+                .setAdvertiseMode( AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY )
+                .setTxPowerLevel( AdvertiseSettings.ADVERTISE_TX_POWER_HIGH )
+                .setConnectable( false )
+                .build();
+
+        AdvertiseData data = new AdvertiseData.Builder()
+                .setIncludeDeviceName( true )
+                .addServiceUuid( Service_UUID )
+                .addServiceData( Service_UUID, "Data".getBytes(StandardCharsets.UTF_8) )
+                .build();
+
+        _bleAdvertiseCallback = new AdvertiseCallback() {
+            @Override
+            public void onStartSuccess(AdvertiseSettings settingsInEffect) {
+                super.onStartSuccess(settingsInEffect);
+            }
+
+            @Override
+            public void onStartFailure(int errorCode) {
+                Log.e(TAG, "Advertising onStartFailure: " + errorCode );
+                super.onStartFailure(errorCode);
+            }
+        };
+
+        _bleAdvertiser.startAdvertising(settings, data, _bleAdvertiseCallback);
+    }
+
+    public void falseStuff() {
+        _bleAdvertiser.stopAdvertising(_bleAdvertiseCallback);
+    }
+
+
+    public void advertise(View v){
+        if (_Advertising){
+            _Advertising = false;
+            // do stuff
+            falseStuff();
+            _AdvertiseButton.setText(R.string.bt_start_advertise);
+        } else {
+            _Advertising = true;
+            // do stuff
+            trueStuff();
+            _AdvertiseButton.setText(R.string.bt_stop_advertise);
         }
     }
 
@@ -131,9 +194,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if( v.getId() == R.id.scan_btn) {
             scan(v);
         }
-        //else if( v.getId() == R.id.advertise_btn ) {
-        //    advertise();
-        //}
+        else if( v.getId() == R.id.advertise_btn ) {
+            advertise(v);
+        }
     }
 
 

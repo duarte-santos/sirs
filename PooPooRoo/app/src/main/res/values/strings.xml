@@ -1,8 +1,10 @@
 <resources>
     <string name="app_name">PooPooRoo</string>
 
-    <string name="bt_scan">SCAN</string>
-    <string name="bt_stop">STOP</string>
+    <string name="bt_start_scan">SCAN</string>
+    <string name="bt_stop_scan">STOP</string>
+    <string name="bt_start_advertise">ADVERTISE</string>
+    <string name="bt_stop_advertise">STOP</string>
 
     <string name="title_location_permission">Location permission required.</string>
     <string name="text_location_permission">For BLE to work, please allow access to coarse location.</string>

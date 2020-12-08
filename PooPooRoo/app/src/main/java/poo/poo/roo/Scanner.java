@@ -4,14 +4,20 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanRecord;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
+import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+
+import static poo.poo.roo.Constants.*;
 
 
 /**
@@ -60,7 +66,7 @@ public class Scanner {
 
         ScanFilter.Builder builder = new ScanFilter.Builder();
         // Comment out the below line to see all BLE devices around you
-        //builder.setServiceUuid(Constants.Service_UUID);
+        builder.setServiceUuid(Service_UUID);
         scanFilters.add(builder.build());
 
         return scanFilters;
@@ -83,12 +89,22 @@ public class Scanner {
 
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
-            //super.onScanResult(callbackType, result);
+            super.onScanResult(callbackType, result);
+            if( result == null || result.getDevice() == null || TextUtils.isEmpty(result.getDevice().getName()) )
+                return;
 
             String name = result.getDevice().getName();
             String address = result.getDevice().getAddress();
             String msg = ( ( name != null ) ? name : address );
-            Log.i(TAG, msg);
+
+            String data = new String(result.getScanRecord().getServiceData(result.getScanRecord().getServiceUuids().get(0)), StandardCharsets.UTF_8);
+
+            Log.i(TAG, msg + " sent \"" + data + "\"");
+        }
+
+        @Override
+        public void onBatchScanResults(List<ScanResult> results) {
+            super.onBatchScanResults(results);
         }
 
         @Override
