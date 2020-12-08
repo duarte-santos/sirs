@@ -34,13 +34,14 @@ public class MainActivity extends AppCompatActivity {
         call.enqueue(new Callback<String>() {
             @Override
             public void onResponse(Call<String> call, Response<String> response) {
-                System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-                System.out.println(response);
+                System.out.println("I received it!");
+                System.out.println(response.body());
             }
 
             @Override
             public void onFailure(Call<String> call, Throwable t) {
-                System.out.println("fuck");
+                System.out.println("I did not received it :(");
+                t.printStackTrace();
             }
         });
     }
