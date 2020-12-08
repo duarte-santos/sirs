@@ -1,6 +1,17 @@
 <resources>
     <string name="app_name">PooPooRoo</string>
-    <string name="title_location_permission">Please give permission</string>
-    <string name="text_location_permission">Permission is needed for BLE to work.</string>
-    <string name="ok">Ok</string>
+
+    <string name="bt_scan">SCAN</string>
+    <string name="bt_stop">STOP</string>
+
+    <string name="title_location_permission">Location permission required.</string>
+    <string name="text_location_permission">For BLE to work, please allow access to coarse location.</string>
+    <string name="title_location_denied">Location permission denied.</string>
+    <string name="text_location_denied">Sorry, coarse location is needed for BLE to work.</string>
+    <string name="ok">OK</string>
+
+    <string name="bt_required">Bluetooth is required.</string>
+    <string name="bt_not_supported">Bluetooth is not supported on this device.</string>
+    <string name="bt_ads_not_supported">Bluetooth Advertisements are not supported on this device.</string>
+
 </resources>
