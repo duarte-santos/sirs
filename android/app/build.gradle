@@ -23,11 +23,6 @@ android {
         textReport true
         textOutput "stdout"
     }
-    packagingOptions {
-        exclude 'META-INF/DEPENDENCIES'
-        exclude 'META-INF/INDEX.LIST'
-        exclude 'META-INF/io.netty.versions.properties'
-    }
 }
 
 protobuf {
@@ -52,6 +47,14 @@ protobuf {
 
 dependencies {
     implementation 'com.android.support:appcompat-v7:27.1.1'
+
+    // RETROFIT
+    implementation 'com.squareup.retrofit2:retrofit:2.3.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.3.0'
+    implementation 'com.google.code.gson:gson:2.8.6'
+    implementation 'com.squareup.okhttp3:logging-interceptor:3.9.1'
+    implementation 'com.squareup.okhttp3:okhttp:3.10.0'
+    //
 
     // You need to build grpc-java to obtain these libraries below.
     implementation 'io.grpc:grpc-okhttp:1.33.1' // CURRENT_GRPC_VERSION
