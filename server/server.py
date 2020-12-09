@@ -7,19 +7,11 @@ from Crypto.Signature import PKCS1_v1_5
 import base64
 import json
 import MySQLdb as db
+import time
 
-infected = []
-
-
-# ------------------------------ Class NumberKey ----------------------------- #
-
-class NumberKey:
-    def __init__(self, number, key):
-        self.number = number
-        self.key = key
-    
-    def __eq__(self, other):
-        return self.number == other.number and self.key == other.key
+# dbHost, dbUser, dbPass, dbName, tableName
+dbInfo = ("localhost", "root", "root", "contact")
+tableName = "numbers"
 
 # ====================================================================== #
 # ====[                          AUXILIARY                         ]==== #
@@ -75,13 +67,13 @@ def init_database():
 
 # -------------------------- Store in Database ------------------------- #
 
-def store_in_database(number, key):
+def store_in_database(number, key, seconds, nanos):
     global tableName
 
     mydb, mycursor = connect_to_database()
 
-    sql = "INSERT INTO " + tableName + " (number, pkey) VALUES (%s, %s) ON DUPLICATE KEY UPDATE number=number;"
-    val = (number, key)
+    sql = "INSERT INTO " + tableName + " (number, pkey, seconds, nanos) VALUES (%s, %s, %s, %s) ON DUPLICATE KEY UPDATE number=number;"
+    val = (number, key, seconds, nanos)
 
     mycursor.execute(sql, val)
     mydb.commit()
@@ -113,6 +105,11 @@ def get_all_from_database():
 
 class saveInfected(tornado.web.RequestHandler):
     def post(self):
+        # ts stores the time in seconds 
+        now = time.time()
+        seconds = int(now)
+        nanos = int( (now - seconds) * 1000000000 )
+
         received = self.request.body.decode()
 
         jsonobj = json.loads(received)
@@ -159,10 +156,8 @@ class saveInfected(tornado.web.RequestHandler):
             
             
             for nk in data[0]['nk_array']:
-                numberkey = NumberKey(nk["number"], nk["key"])
-                if numberkey not in infected:
-                    store_in_database(numberkey)
-                    print("Added: ", numberkey)
+                store_in_database(nk['number'], nk['key'], seconds, nanos)
+                print("Added: ", nk['number'], nk['key'])
 
         self.write("Success")
 

@@ -6,6 +6,7 @@ Segurança Informática em Redes e Sistemas - IST - 2020/2021
 2. Install Gradle (v6.7.1) and add it to Path
 3. Install MySQL and add it to Path
 4. Install MySQL python module (`pip install mysqlclient`)
+5. Install Crypto python module (`pip install pycryptodome`)
 
 ## Before running
 **Step 0: Build the app (in android directory):**
