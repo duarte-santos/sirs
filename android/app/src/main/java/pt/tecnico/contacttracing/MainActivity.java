@@ -12,8 +12,10 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.text.method.ScrollingMovementMethod;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -70,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private Button _ScanButton;
     private Button _AdvertiseButton;
+    private TextView resultText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,7 +85,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         _ScanButton.setOnClickListener(this);
         _AdvertiseButton.setOnClickListener(this);
+        resultText = (TextView) findViewById(R.id.result_text);
+        resultText.setMovementMethod(new ScrollingMovementMethod());
 
+        /*
         if (savedInstanceState == null) {
             BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -91,7 +97,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             _bleScanner = new Scanner(this, btAdapter);
             _bleAdvertiser = new Advertiser(this, btAdapter);
-        }
+        }*/
 
         // Generate new number and MAC address every 5 minutes
         Timer timer = new Timer();
@@ -113,13 +119,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         call.enqueue(new Callback<String>() {
             @Override
             public void onResponse(Call<String> call, Response<String> response) {
-                System.out.println("I received it!");
-                System.out.println(response.body());
+                String text = "I received it!\n";
+                text += response.body();
+                resultText.setText(text);
             }
 
             @Override
             public void onFailure(Call<String> call, Throwable t) {
-                System.out.println("I did not received it :(");
+                String text = "I did not receive it :(\n";
+                resultText.setText(text);
                 t.printStackTrace();
             }
         });
@@ -143,25 +151,23 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         call.enqueue(new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
-                System.out.println("I received it!");
+                resultText.setText(R.string.send_numbers_ok);
                 signed = null; // signed batch sent, no longer valid
             }
 
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
-                System.out.println("I did not received it :(");
+                resultText.setText(R.string.send_numbers_nok);
                 t.printStackTrace();
             }
         });
     }
 
-     public void getInfected(View view) throws JSONException{
+    public void getInfected(View view) throws JSONException{
         ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class, SERVER_URL);
-        
+
         long seconds = lastUpdate.getEpochSecond() ;
         long nanos = lastUpdate.getNano();
-
-        System.out.println(String.valueOf(seconds) + String.valueOf(nanos));
 
         JSONObject json = new JSONObject();
         json.put("lastUpdateSeconds", seconds);
@@ -175,23 +181,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 Object o = response.body();
                 try {
-                    System.out.println("I received it!");
-                    
                     JSONObject jsonObj = new JSONObject(String.valueOf(o));
-
                     JSONArray pairs = (JSONArray) jsonObj.get("data");
 
+                    lastUpdate = Instant.now();
+
+                    if (pairs.length() == 0) {
+                        resultText.setText(R.string.no_new_numbers);
+                        return;
+                    }
+
+                    String text = "New numbers received:\n";
                     for (int i = 0; i < pairs.length(); i++) {
                         JSONObject pair = pairs.getJSONObject(i);
                         String key = pair.getString("Key"); // base64 public key
                         int number = pair.getInt("Number");
                         NumberKey nk = new NumberKey(key, number);
                         received.add(nk);
+                        text += "Number " + number + "\n";
                     }
 
-                    lastUpdate = Instant.now();
-                    System.out.println(lastUpdate);
-
+                    resultText.setText(text);
                     System.out.println(response.body());
 
                 } catch (JSONException e) {
@@ -201,7 +211,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             @Override
             public void onFailure(Call<Object> call, Throwable t) {
-                System.out.println("I did not received it :(");
+                resultText.setText(R.string.receive_numbers_nok);
                 t.printStackTrace();
             }
         });
@@ -224,7 +234,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onResponse(Call<String> call, Response<String> response) {
                 String signature = String.valueOf(response.body());
-                System.out.println("I received it!");
+                resultText.setText(R.string.signature_ok);
                 System.out.println(signature);
 
                 // Create new signed batch
@@ -234,7 +244,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             @Override
             public void onFailure(Call<String> call, Throwable t) {
-                System.out.println("I did not received it :(");
+                resultText.setText(R.string.signature_ok);
                 t.printStackTrace();
             }
         });
@@ -277,17 +287,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             // this thread waiting for the user's response! After the user
             // sees the explanation, try again to request the permission.
             new AlertDialog.Builder(this)
-                .setTitle(R.string.title_location_permission)
-                .setMessage(R.string.text_location_permission)
-                .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        //Prompt the user once explanation has been shown
-                        ActivityCompat.requestPermissions(MainActivity.this, new String[]{ Manifest.permission.ACCESS_FINE_LOCATION }, Constants.REQUEST_LOCATION);
-                    }
-                })
-                .create()
-                .show();
+                    .setTitle(R.string.title_location_permission)
+                    .setMessage(R.string.text_location_permission)
+                    .setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialogInterface, int i) {
+                            //Prompt the user once explanation has been shown
+                            ActivityCompat.requestPermissions(MainActivity.this, new String[]{ Manifest.permission.ACCESS_FINE_LOCATION }, Constants.REQUEST_LOCATION);
+                        }
+                    })
+                    .create()
+                    .show();
         }
     }
 

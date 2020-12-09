@@ -22,4 +22,11 @@
     <string name="get_infected">Get Infected</string>
     <string name="send_infected">Send Infected</string>
 
+    <string name="send_numbers_ok">Numbers stored in server!</string>
+    <string name="send_numbers_nok">Error, numbers were not stored. Please try again. :(</string>
+    <string name="no_new_numbers">No new numbers received</string>
+    <string name="receive_numbers_nok">Error receiving numbers. Please try again. :(</string>
+    <string name="signature_ok">Signature received!</string>
+    <string name="signature_nok">Error getting signature. Please try again.</string>
+
 </resources>
