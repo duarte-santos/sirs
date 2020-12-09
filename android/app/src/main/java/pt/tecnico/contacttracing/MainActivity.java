@@ -15,10 +15,23 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import okhttp3.ResponseBody;
+import pt.tecnico.contacttracing.model.NumberKey;
 import pt.tecnico.contacttracing.webservice.ApiInterface;
 import pt.tecnico.contacttracing.webservice.ServiceGenerator;
 
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Random;
 import java.util.Timer;
@@ -31,9 +44,11 @@ import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private static final String TAG = MainActivity.class.getSimpleName();
+    // Received NumberKeys
+    static List<NumberKey> received = new ArrayList<>();
 
-    static List<Integer> numbers = new ArrayList<>();
+    // Generated
+    static List<NumberKey> generated = new ArrayList<>();
 
     private boolean _Scanning = false;
     private boolean _Advertising = false;
@@ -56,6 +71,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         _ScanButton.setOnClickListener(this);
         _AdvertiseButton.setOnClickListener(this);
 
+        /*
         if (savedInstanceState == null) {
             BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -64,7 +80,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             _bleScanner = new Scanner(this, btAdapter);
             _bleAdvertiser = new Advertiser(this, btAdapter);
-        }
+        }*/
 
         // Generate new number and MAC address every 5 minutes
         Timer timer = new Timer();
@@ -91,6 +107,68 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             @Override
             public void onFailure(Call<String> call, Throwable t) {
+                System.out.println("I did not received it :(");
+                t.printStackTrace();
+            }
+        });
+    }
+
+    public void sendInfected(View view) throws JSONException {
+        ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class);
+        JSONObject json = new JSONObject();
+        json.put("data", generated);
+
+        System.out.println(json);
+
+        Call<Void> call = apiInterface.sendInfected(json);
+
+
+        call.enqueue(new Callback<Void>() {
+            @Override
+            public void onResponse(Call<Void> call, Response<Void> response) {
+                System.out.println("I received it!");
+            }
+
+            @Override
+            public void onFailure(Call<Void> call, Throwable t) {
+                System.out.println("I did not received it :(");
+                t.printStackTrace();
+            }
+        });
+    }
+
+     public void getInfected(View view){
+        ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class);
+        Call<Object> call = apiInterface.getInfected();
+
+        call.enqueue(new Callback<Object>() {
+            @Override
+            public void onResponse(Call<Object> call, Response<Object> response) {
+
+                Object o = response.body();
+                try {
+                    JSONObject jsonObj = new JSONObject(String.valueOf(o));
+                    JSONArray pairs = (JSONArray) jsonObj.get("data");
+
+                    for (int i = 0; i < pairs.length(); i++) {
+                        JSONObject pair = pairs.getJSONObject(i);
+                        String key = pair.getString("Key"); // base64 public key
+                        int number = pair.getInt("Number");
+                        NumberKey nk = new NumberKey(key, number);
+                        received.add(nk);
+                    }
+
+                    System.out.println("I received it!");
+                    System.out.println(response.body());
+                    System.out.println(received.get(0));
+
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            @Override
+            public void onFailure(Call<Object> call, Throwable t) {
                 System.out.println("I did not received it :(");
                 t.printStackTrace();
             }
@@ -181,7 +259,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             _AdvertiseButton.setText(R.string.bt_start_advertise);
         } else {
             _Advertising = true;
-            String number_str = String.valueOf( numbers.get(numbers.size() - 1) );
+            String number_str = String.valueOf( generated.get(generated.size() - 1).getNumber() );
             _bleAdvertiser.startAdvertising(number_str);
             _AdvertiseButton.setText(R.string.bt_stop_advertise);
         }
@@ -220,13 +298,38 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         public void run() {
             Random rnd = new Random();
             int n = 10000000 + rnd.nextInt(90000000); //FIXME size of numbers
-            numbers.add(n);
+            KeyPair key = generateKeyPair();
+
+            byte[] encodedPublicKey = key.getPublic().getEncoded();
+            String b64PublicKey = Base64.getEncoder().encodeToString(encodedPublicKey);
+            String b64PublicKey_noSlashes = b64PublicKey.replace("/", "-"); // Replace slashes or it all goes to hell
+
+            NumberKey nk = new NumberKey(b64PublicKey_noSlashes, n);
+            generated.add(nk);
+
             if (_Advertising) {
                 // Restart Advertise with new identifier.
                 _bleAdvertiser.stopAdvertising();
                 _bleAdvertiser.startAdvertising(String.valueOf(n));
             }
+
         }
+    }
+
+    public KeyPair generateKeyPair() {
+        try {
+
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+            keyGen.initialize(1024);
+            KeyPair keyPair = keyGen.generateKeyPair();
+
+            return keyPair;
+
+        } catch (GeneralSecurityException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
 } // class MainActivity
