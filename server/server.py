@@ -1,62 +1,131 @@
 import tornado.ioloop
 import tornado.web
 import json
+import MySQLdb as db
 
-# ------------------------------ Class NumberKey ----------------------------- #
 
-class NumberKey:
-    def __init__(self, number, key):
-        self.number = number
-        self.key = key
+# dbHost, dbUser, dbPass, dbName, tableName
+dbInfo = ("localhost", "root", "root", "contact")
+tableName = "numbers"
 
-    def dump(self):
-        return {'Number': self.number, 'Key': self.key}
 
-testpair = NumberKey(12345, "imakeyyaaaaay12345")
-testpair2 = NumberKey(66666, "whf83hgf837bf38fb3fo3f4")
-infected = [testpair, testpair2]
+# ====================================================================== #
+# ====[                          AUXILIARY                         ]==== #
+# ====================================================================== #
 
-# -------------------------------- Hello World ------------------------------- #
-
+# ----------------------------- Hello World ---------------------------- #
 class getToken(tornado.web.RequestHandler):
     def get(self):
         self.write("Hello, world")
 
-# ------------------------------- Save Infected ------------------------------ #
+
+# ====[                           Database                         ]==== #
+
+# ------------------------- Connect to Database ------------------------ #
+
+def connect_to_database():
+    global dbInfo
+    dbHost = dbInfo[0]
+    dbUser = dbInfo[1]
+    dbPass = dbInfo[2]
+    dbName = dbInfo[3]
+    
+    mydb = db.connect(host = dbHost, user = dbUser, passwd = dbPass, database=dbName)
+    mycursor = mydb.cursor()
+    return (mydb, mycursor)
+
+
+# ---------------------------- Init Database --------------------------- #
+
+def init_database():
+    global dbInfo
+    global tableName
+    dbHost = dbInfo[0]
+    dbUser = dbInfo[1]
+    dbPass = dbInfo[2]
+    dbName = dbInfo[3]
+
+    mydb = db.connect(host = dbHost, user = dbUser, passwd = dbPass)
+    mycursor = mydb.cursor()
+
+    mycursor.execute("CREATE DATABASE IF NOT EXISTS " +  dbName + ";")
+    mycursor.execute("CREATE USER IF NOT EXISTS '" + dbUser + "'@" + dbHost + " IDENTIFIED BY '" + dbPass + "';")
+    mycursor.execute("GRANT ALL PRIVILEGES ON `" + dbName + "`.* TO '" + dbUser + "'@" + dbHost + ";")
+    
+    mydb, mycursor = connect_to_database()
+    mycursor.execute("CREATE TABLE IF NOT EXISTS " + tableName + \
+                    "  (number          INT PRIMARY KEY," \
+                    "   pkey            VARCHAR(255)," \
+                    "   seconds         LONG," \
+                    "   nanos           LONG);")
+
+
+# -------------------------- Store in Database ------------------------- #
+
+def store_in_database(number, key):
+    global tableName
+
+    mydb, mycursor = connect_to_database()
+
+    sql = "INSERT INTO " + tableName + " (number, pkey) VALUES (%s, %s) ON DUPLICATE KEY UPDATE number=number;"
+    val = (number, key)
+
+    mycursor.execute(sql, val)
+    mydb.commit()
+
+
+# -------------------------- Get from Database ------------------------- #
+
+def get_all_from_database():
+    data = []
+
+    mydb, mycursor = connect_to_database()
+
+    mycursor.execute("SELECT * FROM " + tableName + ";")
+    myresult = mycursor.fetchall()
+
+    for row in myresult:
+        print(row)
+        data.append({"Number": row[0], "Key": row[1]})
+
+    return data
+
+
+
+# ====================================================================== #
+# ====[                           MAIN                             ]==== #
+# ====================================================================== #
+
+# ---------------------------- Save Infected --------------------------- #
 
 class saveInfected(tornado.web.RequestHandler):
-    global infected
     def post(self):
         received = self.request.body.decode()
 
         jsonobj = json.loads(received)
         data = jsonobj["nameValuePairs"]["data"]
 
-        for nk in data:
-            numberkey = NumberKey(nk["number"], nk["key"])
-            infected.append(numberkey)
+        print(data)
 
-        for i in infected:
-            print(i.number, i.key)
+        for nk in data:
+            store_in_database(nk['number'], nk['key'])         
 
         self.write("nothing")
 
-# ------------------------------- Get Infected ------------------------------- #
+
+# ---------------------------- Get Infected ---------------------------- #
 
 class getInfected(tornado.web.RequestHandler):
-    global infected
     def get(self):
-        global infected
-        
-        response = {'data':[]}
-        for pair in infected:
-            response['data'].append(pair.dump())
+        data = get_all_from_database()
+        response = {'data':data}
 
         self.write(response)
 
 
+# ----------------------------- Run server ----------------------------- #
 
-# ----------------------------------- Stuff ---------------------------------- #
+init_database()
 
 application = tornado.web.Application([
     (r'/', getToken),
@@ -65,6 +134,7 @@ application = tornado.web.Application([
 ])
 
 if __name__ == "__main__":
+
     http_server = tornado.httpserver.HTTPServer(application, ssl_options={
         "certfile": "server.crt",
         "keyfile": "server.key"

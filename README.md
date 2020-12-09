@@ -5,48 +5,31 @@ Segurança Informática em Redes e Sistemas - IST - 2020/2021
 1. Install AdoptOpenJDK 8 and add it to Path
 2. Install Gradle (v6.7.1) and add it to Path
 3. Install MySQL and add it to Path
+4. Install MySQL python module (`pip install mysqlclient`)
 
 ## Before running
-**Step 0: Install the app (in base directory):**
+**Step 0: Build the app (in android directory):**
  ```sh
- $ gradle clean install
+ $ cd android
+ $ gradle clean build
  ```
 
 ## Server
 
-**Step 1: Firstly, we need to setup the MySql database**
-
-**A: Linux**
-
-Run:
-```sh
-$ sudo mysql
-```
-
-Inside the mysql prompt, run:
-```sql
-CREATE DATABASE contact;
-CREATE USER 'server'@'localhost' IDENTIFIED BY 'server';
-GRANT ALL PRIVILEGES ON contact TO 'server'@'localhost';
-```
-
-**B: Windows**
-
-Open `MySQL command line client`
-
-Run:
-```sql
-CREATE DATABASE contact;
-CREATE USER 'server'@'localhost' IDENTIFIED BY 'server';
-GRANT ALL PRIVILEGES ON `contact`.* TO 'server'@'localhost';
-```
-
-**Step 2: To run the server:**
+**Step 1: To run the server:**
  ```sh
- $ cd build/install/sirs/bin/
- $ ./contacttracing-server.bat 50051
+ $ cd server
+ $ python ./server.py
  ```
-NOTE: The run commands were only tested on windows
+NOTE: Alternatively use `python3`
+
+
+ ## Health Authority
+ **Step 2: To run the Health Authority server:**
+  ```sh
+ $ cd health-authority
+ $ python ./health.py
+ ```
 
 
 ## Client (on Android)
@@ -56,10 +39,3 @@ NOTE: The run commands were only tested on windows
  - Fill ip = `10.0.2.2` and port = `50051` and press `Start Contact Tracing`
 
  NOTE: The run commands were only tested on windows
-
- ## Health Authority (Optional)
- **Step 4: To run the Health Authority server:**
-  ```sh
- $ cd build/install/sirs/bin/
- $ .\contacttracing-health.bat 6000
- ```
