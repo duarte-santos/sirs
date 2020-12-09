@@ -24,6 +24,7 @@ import org.json.JSONObject;
 
 import okhttp3.ResponseBody;
 import pt.tecnico.contacttracing.model.NumberKey;
+import pt.tecnico.contacttracing.model.SignedBatch;
 import pt.tecnico.contacttracing.webservice.ApiInterface;
 import pt.tecnico.contacttracing.webservice.ServiceGenerator;
 
@@ -49,6 +50,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     // Generated
     static List<NumberKey> generated = new ArrayList<>();
+
+    // Signed by health authority
+    static List<SignedBatch> signed = new ArrayList<>();
 
     private String SERVER_URL = "https://10.0.2.2:8888/";
     private String HEALTH_URL = "https://10.0.2.2:9999/";
@@ -118,7 +122,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void sendInfected(View view) throws JSONException {
         ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class, SERVER_URL);
         JSONObject json = new JSONObject();
-        json.put("data", generated);
+        json.put("data", signed);
 
         System.out.println(json);
 
@@ -151,6 +155,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 try {
                     JSONObject jsonObj = new JSONObject(String.valueOf(o));
                     JSONArray pairs = (JSONArray) jsonObj.get("data");
+
+                    if (pairs.length() == 0){
+                        return;
+                    }
 
                     for (int i = 0; i < pairs.length(); i++) {
                         JSONObject pair = pairs.getJSONObject(i);
@@ -187,20 +195,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             numbers.put(n.getNumber());
         }
 
-        Call<Object> call = apiInterface.getSignature(numbers);
+        Call<String> call = apiInterface.getSignature(numbers);
 
-        call.enqueue(new Callback<Object>() {
+        call.enqueue(new Callback<String>() {
             @Override
-            public void onResponse(Call<Object> call, Response<Object> response) {
-
-                Object o = response.body();
-
+            public void onResponse(Call<String> call, Response<String> response) {
+                String signature = String.valueOf(response.body());
                 System.out.println("I received it!");
-                System.out.println(response.body());
+                System.out.println(signature);
+
+                // Create new signed batch
+                SignedBatch b = new SignedBatch(generated, numbers.length(), signature);
+                signed.add(b);
             }
 
             @Override
-            public void onFailure(Call<Object> call, Throwable t) {
+            public void onFailure(Call<String> call, Throwable t) {
                 System.out.println("I did not received it :(");
                 t.printStackTrace();
             }

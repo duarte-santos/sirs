@@ -21,5 +21,5 @@ public interface ApiInterface {
     Call<Void> sendInfected(@Body Object body);
 
     @POST("/getsignature")
-    Call<Object> getSignature(@Body Object body);
+    Call<String> getSignature(@Body Object body);
 }

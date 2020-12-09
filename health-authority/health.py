@@ -1,58 +1,35 @@
 import tornado.ioloop
 import tornado.web
 import json
-from hashlib import sha256
+from Crypto.Hash import SHA256
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.PublicKey import RSA
+from Crypto.Signature import PKCS1_v1_5
 import base64
-
-# ------------------------------ Class NumberKey ----------------------------- #
-
-class NumberKey:
-    def __init__(self, number, key):
-        self.number = number
-        self.key = key
-
-    def dump(self):
-        return {'Number': self.number, 'Key': self.key}
-
-testpair = NumberKey(12345, "imakeyyaaaaay12345")
-testpair2 = NumberKey(66666, "whf83hgf837bf38fb3fo3f4")
-infected = [testpair, testpair2]
 
 # ------------------------------- Get Signature ------------------------------- #
 
 class getSignature(tornado.web.RequestHandler):
     def post(self):
-        request = self.request.body.decode()
-        print(request)
+        request = self.request.body
 
-        msg = "aaaaa"
-
-        privkey = False
         with open('health.priv', 'rb') as f:
             privkey = RSA.importKey(f.read())
-        with open('health.pub', 'rb') as f:
-            pubkey = RSA.importKey(f.read())
 
-        digest = sha256(request.encode('utf-8'))
+        # Create message digest
+        digest = SHA256.new()
+        digest.update(request)
 
-        '''
         # Encrypt digest
-        cipher = PKCS1_OAEP.new(privkey)
-        signature = base64.b64encode(cipher.encrypt(msg.encode()))
+        signer = PKCS1_v1_5.new(privkey)
+        signature = signer.sign(digest)
+        signature_b64 = base64.b64encode(signature)
 
-        print(signature)
+        # Replace slashes or it all goes to hell 
+        escaped_signature = signature_b64.decode().replace("/", "-")
 
-        # Verify with public key
-        cipher = PKCS1_OAEP.new(privkey.publickey())
-        decrypted_digest = cipher.decrypt(base64.b64decode(signature))
-        
-        print(base64.b64encode(decrypted_digest))'''
-
-        signature = digest.hexdigest()
-        print("Signed!: ", signature)
-        self.write(signature)
+        print("Signed!")
+        self.write(escaped_signature)
 
 # ----------------------------------- Stuff ---------------------------------- #
 
