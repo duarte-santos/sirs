@@ -14,6 +14,7 @@ import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -30,6 +31,7 @@ import pt.tecnico.contacttracing.webservice.ServiceGenerator;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
@@ -51,7 +53,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     static List<NumberKey> generated = new ArrayList<>();
 
     // Signed by health authority
-    static List<SignedBatch> signed = new ArrayList<>();
+    static SignedBatch signed = null;
+
+    static Instant lastUpdate;
 
     private String SERVER_URL = "https://10.0.2.2:8888/";
     private String HEALTH_URL = "https://10.0.2.2:9999/";
@@ -94,6 +98,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Timer timer = new Timer();
         timer.schedule(new GenerateNumber(), 0, 1000 * 10);
 
+        lastUpdate = Instant.now();
+
     }
 
 
@@ -121,6 +127,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void sendInfected(View view) throws JSONException {
+        if (signed == null) {
+            Toast.makeText(this, "Please ask health authority for a signature before sending the numbers.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class, SERVER_URL);
         JSONObject json = new JSONObject();
         json.put("data", signed);
@@ -134,6 +145,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 System.out.println("I received it!");
+                signed = null; // signed batch sent, no longer valid
             }
 
             @Override
@@ -144,9 +156,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         });
     }
 
-     public void getInfected(View view){
+     public void getInfected(View view) throws JSONException{
         ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class, SERVER_URL);
-        Call<Object> call = apiInterface.getInfected();
+        
+        long seconds = lastUpdate.getEpochSecond() ;
+        long nanos = lastUpdate.getNano();
+
+        System.out.println(String.valueOf(seconds) + String.valueOf(nanos));
+
+        JSONObject json = new JSONObject();
+        json.put("lastUpdateSeconds", seconds);
+        json.put("lastUpdateNanos", nanos);
+
+        Call<Object> call = apiInterface.getInfected(json);
 
         call.enqueue(new Callback<Object>() {
             @Override
@@ -154,12 +176,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 Object o = response.body();
                 try {
+                    System.out.println("I received it!");
+                    
                     JSONObject jsonObj = new JSONObject(String.valueOf(o));
-                    JSONArray pairs = (JSONArray) jsonObj.get("data");
 
-                    if (pairs.length() == 0){
-                        return;
-                    }
+                    JSONArray pairs = (JSONArray) jsonObj.get("data");
 
                     for (int i = 0; i < pairs.length(); i++) {
                         JSONObject pair = pairs.getJSONObject(i);
@@ -169,9 +190,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         received.add(nk);
                     }
 
-                    System.out.println("I received it!");
+                    lastUpdate = Instant.now();
+                    System.out.println(lastUpdate);
+
                     System.out.println(response.body());
-                    System.out.println(received.get(0));
 
                 } catch (JSONException e) {
                     e.printStackTrace();
@@ -193,6 +215,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         JSONArray numbers = new JSONArray();
         for (NumberKey n : generated) {
+            System.out.println(n.getNumber());
             numbers.put(n.getNumber());
         }
 
@@ -207,7 +230,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 // Create new signed batch
                 SignedBatch b = new SignedBatch(generated, numbers.length(), signature);
-                signed.add(b);
+                signed = b;
             }
 
             @Override

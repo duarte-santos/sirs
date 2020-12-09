@@ -14,8 +14,8 @@ public interface ApiInterface {
     @GET("/")
     Call<String> getHello();
 
-    @GET("/getinfected")
-    Call<Object> getInfected();
+    @POST("/getinfected")
+    Call<Object> getInfected(@Body Object body);
 
     @POST("/sendinfected")
     Call<Void> sendInfected(@Body Object body);
