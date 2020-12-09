@@ -15,6 +15,9 @@
     <string name="bt_required">Bluetooth is required.</string>
     <string name="bt_not_supported">Bluetooth is not supported on this device.</string>
     <string name="bt_ads_not_supported">Bluetooth Advertisements are not supported on this device.</string>
+    <string name="bt_2m_phy_not_supported">2M PHY not supported.</string>
+    <string name="bt_extended_not_supported">LE Extended Advertising not supported.</string>
+
     <string name="receive_signature">Receive Signature</string>
     <string name="get_infected">Get Infected</string>
     <string name="send_infected">Send Infected</string>

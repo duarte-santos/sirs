@@ -6,10 +6,12 @@ import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertiseSettings;
 import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.content.Context;
+import android.os.ParcelUuid;
 import android.util.Log;
 import android.widget.Toast;
 
 import java.nio.charset.StandardCharsets;
+
 
 /**
  * Allows user to start & stop Bluetooth LE Advertising of their device.
@@ -35,7 +37,9 @@ public class Advertiser {
 
         // Kick off a new scan.
         _bleAdvertiseCallback = new Advertiser.SampleAdvertiseCallback();
-        _bleAdvertiser.startAdvertising(buildAdvertiseSettings(), buildAdvertiseData(data), _bleAdvertiseCallback);
+        AdvertiseData advertiseData = buildAdvertiseData("23bytes________________", Constants.AdvertiseData_Service_UUID);
+        AdvertiseData  scanResponse = buildAdvertiseData("________________23bytes",  Constants.ScanResponse_Service_UUID);
+        _bleAdvertiser.startAdvertising(buildAdvertiseSettings(), advertiseData, scanResponse, _bleAdvertiseCallback);
     }
 
     /**
@@ -52,11 +56,10 @@ public class Advertiser {
     /**
      * Return a {@link AdvertiseData} object which includes the Service UUID.
      */
-    private AdvertiseData buildAdvertiseData(String data) {
+    private AdvertiseData buildAdvertiseData(String data, ParcelUuid serviceUuid) {
         AdvertiseData.Builder builder = new AdvertiseData.Builder();
-        builder.setIncludeDeviceName(true)
-                .addServiceUuid(Constants.Service_UUID)
-                .addServiceData(Constants.Service_UUID, data.getBytes(StandardCharsets.UTF_8));
+        builder.addServiceUuid(serviceUuid)
+                .addServiceData(serviceUuid, data.getBytes(StandardCharsets.UTF_8));
         return builder.build();
     }
 

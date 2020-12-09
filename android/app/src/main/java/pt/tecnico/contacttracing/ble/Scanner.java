@@ -7,7 +7,6 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.content.Context;
-import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -62,7 +61,7 @@ public class Scanner {
 
         ScanFilter.Builder builder = new ScanFilter.Builder();
         // Comment out the below line to see all BLE devices around you
-        builder.setServiceUuid(Constants.Service_UUID);
+        builder.setServiceUuid(Constants.AdvertiseData_Service_UUID);
         scanFilters.add(builder.build());
 
         return scanFilters;
@@ -86,16 +85,17 @@ public class Scanner {
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
-            if( result == null || result.getDevice() == null || TextUtils.isEmpty(result.getDevice().getName()) )
+            if( result == null || result.getDevice() == null /*|| TextUtils.isEmpty(result.getDevice().getName())*/ )
                 return;
 
             String name = result.getDevice().getName();
             String address = result.getDevice().getAddress();
             String msg = ( ( name != null ) ? name : address );
 
-            String data = new String(result.getScanRecord().getServiceData(result.getScanRecord().getServiceUuids().get(0)), StandardCharsets.UTF_8);
+            String advertiseData = new String(result.getScanRecord().getServiceData(Constants.AdvertiseData_Service_UUID), StandardCharsets.UTF_8);
+            String  scanResponse = new String(result.getScanRecord().getServiceData( Constants.ScanResponse_Service_UUID), StandardCharsets.UTF_8);
 
-            Log.i(TAG, msg + " sent \"" + data + "\"");
+            Log.i(TAG, msg + " sent \"" + advertiseData + "\" + \"" + scanResponse + "\"" );
         }
 
         @Override

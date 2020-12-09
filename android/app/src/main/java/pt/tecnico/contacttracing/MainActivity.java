@@ -83,7 +83,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         _ScanButton.setOnClickListener(this);
         _AdvertiseButton.setOnClickListener(this);
 
-        /*
         if (savedInstanceState == null) {
             BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -92,7 +91,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             _bleScanner = new Scanner(this, btAdapter);
             _bleAdvertiser = new Advertiser(this, btAdapter);
-        }*/
+        }
 
         // Generate new number and MAC address every 5 minutes
         Timer timer = new Timer();
