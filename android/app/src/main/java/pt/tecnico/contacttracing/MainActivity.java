@@ -52,6 +52,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private String SERVER_URL = "https://10.0.2.2:8888/";
     private String HEALTH_URL = "https://10.0.2.2:9999/";
+    //private String SERVER_URL = "https://localhost:8888/";
+    //private String HEALTH_URL = "https://127.0.0.1:9999/"; FIXME run on physical
 
     private boolean _Scanning = false;
     private boolean _Advertising = false;
