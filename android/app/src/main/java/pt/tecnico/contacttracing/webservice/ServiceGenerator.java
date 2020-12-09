@@ -15,8 +15,8 @@ import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
 public class ServiceGenerator {
-    private final static String BASE_API_URL = "https://10.0.2.2:8888/";
     private static Retrofit retrofit = null;
+    private static String url = null;
     private static Gson gson = new GsonBuilder()
                                     .setLenient()
                                     .create();
@@ -34,15 +34,18 @@ public class ServiceGenerator {
             .build();
 
 
-    public static <T> T createService(Class<T> serviceClass){
-        if(retrofit == null){
+    public static <T> T createService(Class<T> serviceClass, String updated_url){
+        System.out.println(url + " ----- " + updated_url);
+        if(retrofit == null || url != updated_url){
+            url = updated_url;
             retrofit = new Retrofit.Builder()
                     .client(okHttpClient)
-                    .baseUrl(BASE_API_URL)
+                    .baseUrl(url)
                     .addConverterFactory(GsonConverterFactory.create(gson))
                     .build();
         }
         return retrofit.create(serviceClass);
     }
+
 
 }

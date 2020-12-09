@@ -19,4 +19,7 @@ public interface ApiInterface {
 
     @POST("/sendinfected")
     Call<Void> sendInfected(@Body Object body);
+
+    @POST("/getsignature")
+    Call<Object> getSignature(@Body Object body);
 }

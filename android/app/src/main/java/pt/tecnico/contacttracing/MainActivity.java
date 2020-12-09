@@ -50,6 +50,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     // Generated
     static List<NumberKey> generated = new ArrayList<>();
 
+    private String SERVER_URL = "https://10.0.2.2:8888/";
+    private String HEALTH_URL = "https://10.0.2.2:9999/";
+
     private boolean _Scanning = false;
     private boolean _Advertising = false;
 
@@ -86,7 +89,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Timer timer = new Timer();
         timer.schedule(new GenerateNumber(), 0, 1000 * 10);
 
-        getHello();
     }
 
 
@@ -95,7 +97,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /* ====================================================================== */
 
     private void getHello(){
-        ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class);
+        ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class, SERVER_URL);
         Call<String> call = apiInterface.getHello();
 
         call.enqueue(new Callback<String>() {
@@ -114,7 +116,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public void sendInfected(View view) throws JSONException {
-        ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class);
+        ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class, SERVER_URL);
         JSONObject json = new JSONObject();
         json.put("data", generated);
 
@@ -138,7 +140,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
      public void getInfected(View view){
-        ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class);
+        ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class, SERVER_URL);
         Call<Object> call = apiInterface.getInfected();
 
         call.enqueue(new Callback<Object>() {
@@ -173,6 +175,38 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 t.printStackTrace();
             }
         });
+
+
+    }
+
+    public void getSignature(View view){
+        ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class, HEALTH_URL);
+
+        JSONArray numbers = new JSONArray();
+        for (NumberKey n : generated) {
+            numbers.put(n.getNumber());
+        }
+
+        Call<Object> call = apiInterface.getSignature(numbers);
+
+        call.enqueue(new Callback<Object>() {
+            @Override
+            public void onResponse(Call<Object> call, Response<Object> response) {
+
+                Object o = response.body();
+
+                System.out.println("I received it!");
+                System.out.println(response.body());
+            }
+
+            @Override
+            public void onFailure(Call<Object> call, Throwable t) {
+                System.out.println("I did not received it :(");
+                t.printStackTrace();
+            }
+        });
+
+
     }
 
     /* ====================================================================== */
