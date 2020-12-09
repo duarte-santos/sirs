@@ -15,14 +15,13 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import okhttp3.ResponseBody;
+import pt.tecnico.contacttracing.ble.Advertiser;
+import pt.tecnico.contacttracing.ble.Constants;
+import pt.tecnico.contacttracing.ble.Scanner;
 import pt.tecnico.contacttracing.model.NumberKey;
 import pt.tecnico.contacttracing.webservice.ApiInterface;
 import pt.tecnico.contacttracing.webservice.ServiceGenerator;
