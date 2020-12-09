@@ -1,4 +1,4 @@
-package pt.tecnico.contacttracing;
+package pt.tecnico.contacttracing.ble;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.AdvertiseCallback;

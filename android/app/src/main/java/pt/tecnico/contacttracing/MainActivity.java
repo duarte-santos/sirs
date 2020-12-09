@@ -15,14 +15,13 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import okhttp3.ResponseBody;
+import pt.tecnico.contacttracing.ble.Advertiser;
+import pt.tecnico.contacttracing.ble.Constants;
+import pt.tecnico.contacttracing.ble.Scanner;
 import pt.tecnico.contacttracing.model.NumberKey;
 import pt.tecnico.contacttracing.model.SignedBatch;
 import pt.tecnico.contacttracing.webservice.ApiInterface;
@@ -56,6 +55,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private String SERVER_URL = "https://10.0.2.2:8888/";
     private String HEALTH_URL = "https://10.0.2.2:9999/";
+    //private String SERVER_URL = "https://localhost:8888/";
+    //private String HEALTH_URL = "https://127.0.0.1:9999/"; FIXME run on physical
 
     private boolean _Scanning = false;
     private boolean _Advertising = false;
