@@ -11,6 +11,8 @@ import android.bluetooth.BluetoothAdapter;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
 import android.view.View;
@@ -48,16 +50,15 @@ import retrofit2.Response;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
-    // Received NumberKeys
-    static List<NumberKey> received = new ArrayList<>();
-
-    // Generated
-    static List<NumberKey> generated = new ArrayList<>();
+    // Database
+    SQLiteDatabase database;
 
     // Signed by health authority
     static SignedBatch signed = null;
 
-    static Instant lastUpdate;
+    static Instant lastUpdate = null;
+
+    private Integer lastGenerated = null;
 
     private String SERVER_URL = "https://10.0.2.2:8888/";
     private String HEALTH_URL = "https://10.0.2.2:9999/";
@@ -88,23 +89,72 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         resultText = (TextView) findViewById(R.id.result_text);
         resultText.setMovementMethod(new ScrollingMovementMethod());
 
-        /*
+
         if (savedInstanceState == null) {
-            BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+            /*BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 
             checkLocationPermission();
             checkBluetoothSupport(btAdapter);
 
             _bleScanner = new Scanner(this, btAdapter);
-            _bleAdvertiser = new Advertiser(this, btAdapter);
-        }*/
+            _bleAdvertiser = new Advertiser(this, btAdapter);*/
+        }
 
         // Generate new number and MAC address every 5 minutes
         Timer timer = new Timer();
         timer.schedule(new GenerateNumber(), 0, 1000 * 10);
 
-        lastUpdate = Instant.now();
 
+        init_database();
+
+    }
+
+
+    /* ====================================================================== */
+    /* ====[                         DATABASE                           ]==== */
+    /* ====================================================================== */
+    private void init_database() {
+        database = openOrCreateDatabase("database", MODE_PRIVATE,null);
+        database.execSQL("CREATE TABLE IF NOT EXISTS GeneratedNumbers(Number INT PRIMARY KEY, PrivateKey VARCHAR);");
+        database.execSQL("CREATE TABLE IF NOT EXISTS ReceivedNumbers(Number INT PRIMARY KEY, PrivateKey VARCHAR);"); //FIXME
+    }
+
+    private void add_generated(int number, String key) {
+        database.execSQL("INSERT OR IGNORE INTO GeneratedNumbers VALUES('" + number + "','" + key + "')");
+    }
+
+    private void add_received(int number, String key) {
+        database.execSQL("INSERT OR IGNORE INTO ReceivedNumbers VALUES('" + number + "','" + key + "');");
+    }
+
+    private List<NumberKey> get_generated() {
+        Cursor cursor = database.rawQuery("Select * from GeneratedNumbers",null);
+        List<NumberKey> generated = new ArrayList<>();
+
+        cursor.moveToFirst();
+        while (!cursor.isAfterLast()) {
+            int number = cursor.getInt(0);
+            String key = cursor.getString(1);
+            NumberKey nk = new NumberKey(key, number);
+            generated.add(nk);
+            cursor.moveToNext();
+        }
+        return generated;
+    }
+
+    private List<NumberKey> get_received() {
+        Cursor cursor = database.rawQuery("Select * from ReceicedNumbers",null);
+        List<NumberKey> received = new ArrayList<>();
+
+        cursor.moveToFirst();
+        while (!cursor.isAfterLast()) {
+            int number = cursor.getInt(0);
+            String key = cursor.getString(1);
+            NumberKey nk = new NumberKey(key, number);
+            received.add(nk);
+            cursor.moveToNext();
+        }
+        return received;
     }
 
 
@@ -166,8 +216,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void getInfected(View view) throws JSONException{
         ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class, SERVER_URL);
 
-        long seconds = lastUpdate.getEpochSecond() ;
-        long nanos = lastUpdate.getNano();
+        long seconds = lastUpdate != null ? lastUpdate.getEpochSecond() : 0;
+        long nanos = lastUpdate != null ? lastUpdate.getNano() : 0;
 
         JSONObject json = new JSONObject();
         json.put("lastUpdateSeconds", seconds);
@@ -196,8 +246,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         JSONObject pair = pairs.getJSONObject(i);
                         String key = pair.getString("Key"); // base64 public key
                         int number = pair.getInt("Number");
-                        NumberKey nk = new NumberKey(key, number);
-                        received.add(nk);
+                        add_received(number, key);
                         text += "Number " + number + "\n";
                     }
 
@@ -223,6 +272,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class, HEALTH_URL);
 
         JSONArray numbers = new JSONArray();
+        List<NumberKey> generated = get_generated();
         for (NumberKey n : generated) {
             System.out.println(n.getNumber());
             numbers.put(n.getNumber());
@@ -336,7 +386,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             _AdvertiseButton.setText(R.string.bt_start_advertise);
         } else {
             _Advertising = true;
-            String number_str = String.valueOf( generated.get(generated.size() - 1).getNumber() );
+            String number_str = String.valueOf( lastGenerated );
             _bleAdvertiser.startAdvertising(number_str);
             _AdvertiseButton.setText(R.string.bt_stop_advertise);
         }
@@ -380,9 +430,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             byte[] encodedPublicKey = key.getPublic().getEncoded();
             String b64PublicKey = Base64.getEncoder().encodeToString(encodedPublicKey);
             String b64PublicKey_noSlashes = b64PublicKey.replace("/", "-"); // Replace slashes or it all goes to hell
-
-            NumberKey nk = new NumberKey(b64PublicKey_noSlashes, n);
-            generated.add(nk);
+            add_generated(n, b64PublicKey_noSlashes);
+            lastGenerated = n;
 
             if (_Advertising) {
                 // Restart Advertise with new identifier.

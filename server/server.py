@@ -170,6 +170,7 @@ class saveInfected(tornado.web.RequestHandler):
         for nk in data['nk_array']:
             store_in_database(nk['number'], nk['key'], seconds, nanos)
 
+        print("---------------------------------\n")
         self.write("Success")
 
 
