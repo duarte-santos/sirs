@@ -85,8 +85,8 @@ public class Scanner {
     private class SampleScanCallback extends ScanCallback {
 
         public Instant bytesToInstant(byte[] bytes) {
-            int dateInMillis = ByteBuffer.wrap(bytes).getInt() * 1000;
-            return Instant.ofEpochMilli(dateInMillis);
+            int dateInSec = ByteBuffer.wrap(bytes).getInt();
+            return Instant.ofEpochSecond(dateInSec);
         }
 
         @Override
