@@ -23,4 +23,7 @@ public class Constants {
     public static final int REQUEST_ENABLE_BT = 1;
     public static final int REQUEST_LOCATION = 2;
 
+    public static final long SCAN_PERIOD = 5000;
+    public static final long ADVERTISE_PERIOD = 15000;
+
 }

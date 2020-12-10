@@ -10,8 +10,6 @@ import android.os.ParcelUuid;
 import android.util.Log;
 import android.widget.Toast;
 
-import java.nio.charset.StandardCharsets;
-
 
 /**
  * Allows user to start & stop Bluetooth LE Advertising of their device.

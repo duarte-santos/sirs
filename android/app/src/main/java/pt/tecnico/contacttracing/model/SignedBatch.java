@@ -3,6 +3,7 @@ package pt.tecnico.contacttracing.model;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class SignedBatch {
     public List<NumberKey> nk_array = new ArrayList<>();
     public String signature; // base64 encoded

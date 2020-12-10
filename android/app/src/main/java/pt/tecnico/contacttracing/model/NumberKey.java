@@ -2,6 +2,7 @@ package pt.tecnico.contacttracing.model;
 
 import java.util.Objects;
 
+
 public class NumberKey {
     private String key;
     private int number;

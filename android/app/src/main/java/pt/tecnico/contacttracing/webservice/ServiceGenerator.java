@@ -3,16 +3,14 @@ package pt.tecnico.contacttracing.webservice;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
-import java.net.InetAddress;
-
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
 
 import okhttp3.OkHttpClient;
-import okhttp3.tls.*;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+
 
 public class ServiceGenerator {
     private static Retrofit retrofit = null;

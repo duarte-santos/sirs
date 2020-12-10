@@ -1,11 +1,5 @@
 package pt.tecnico.contacttracing;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-
 import android.Manifest;
 import android.bluetooth.BluetoothAdapter;
 import android.content.DialogInterface;
@@ -14,26 +8,23 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.method.ScrollingMovementMethod;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import pt.tecnico.contacttracing.ble.Advertiser;
-import pt.tecnico.contacttracing.ble.Constants;
-import pt.tecnico.contacttracing.ble.Scanner;
-import pt.tecnico.contacttracing.model.NumberKey;
-import pt.tecnico.contacttracing.model.SignedBatch;
-import pt.tecnico.contacttracing.webservice.ApiInterface;
-import pt.tecnico.contacttracing.webservice.ServiceGenerator;
-
-import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -48,7 +39,15 @@ import java.util.List;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.TimeUnit;
 
+import pt.tecnico.contacttracing.ble.Advertiser;
+import pt.tecnico.contacttracing.ble.Constants;
+import pt.tecnico.contacttracing.ble.Scanner;
+import pt.tecnico.contacttracing.model.NumberKey;
+import pt.tecnico.contacttracing.model.SignedBatch;
+import pt.tecnico.contacttracing.webservice.ApiInterface;
+import pt.tecnico.contacttracing.webservice.ServiceGenerator;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -78,6 +77,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private Scanner _bleScanner;
     private Advertiser _bleAdvertiser;
+    private Handler _Handler;
 
     private Button _ScanButton;
     private Button _AdvertiseButton;
@@ -97,7 +97,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         resultText = (TextView) findViewById(R.id.result_text);
         resultText.setMovementMethod(new ScrollingMovementMethod());
 
-        if (savedInstanceState == null) {
+        //if (savedInstanceState == null) {
             BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 
             checkLocationPermission();
@@ -105,7 +105,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             _bleScanner = new Scanner(this, btAdapter);
             _bleAdvertiser = new Advertiser(this, btAdapter);
-        }
+        //}
+
+        _Handler = new Handler();
 
         // Generate new number and MAC address every 5 minutes
         Timer timer = new Timer();
@@ -376,35 +378,49 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /* ====[                      UI INTERACTION                        ]==== */
     /* ====================================================================== */
 
-    public void scan(View v){
-        if (_Scanning) {
-            _Scanning = false;
-            _bleScanner.stopScanning();
-            _ScanButton.setText(R.string.bt_start_scan);
-        } else {
-            _Scanning = true;
-            _bleScanner.startScanning();
-            _ScanButton.setText(R.string.bt_stop_scan);
-        }
+
+
+    public void scan(View v) {
+        _ScanButton.setEnabled(false);
+
+        _bleScanner.startScanning();
+
+        String toastText = "Scanning for " + TimeUnit.SECONDS.convert(Constants.SCAN_PERIOD, TimeUnit.MILLISECONDS) + " seconds.";
+        Toast.makeText(this, toastText, Toast.LENGTH_LONG).show();
+
+        // Will stop the scanning after a set time.
+        _Handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                _bleScanner.stopScanning();
+                _ScanButton.setEnabled(true);
+            }
+        }, Constants.SCAN_PERIOD);
     }
 
-    public void advertise(View v){
-        if (_Advertising) {
-            _Advertising = false;
-            _bleAdvertiser.stopAdvertising();
-            _AdvertiseButton.setText(R.string.bt_start_advertise);
-        } else {
-            _Advertising = true;
-            String number_str = String.valueOf( _lastGenerated );
-            byte[] ts = getCurrentTimeInBytes();
-            _bleAdvertiser.startAdvertising(number_str.getBytes(StandardCharsets.UTF_8), ts, null);
-            _AdvertiseButton.setText(R.string.bt_stop_advertise);
-        }
+    public void advertise(View v) {
+        _AdvertiseButton.setEnabled(false);
+
+        String number_str = String.valueOf( _lastGenerated );
+        byte[] ts = getCurrentTimeInBytes();
+        _bleAdvertiser.startAdvertising(number_str.getBytes(StandardCharsets.UTF_8), ts, null);
+
+        String toastText = "Advertising for " + TimeUnit.SECONDS.convert(Constants.ADVERTISE_PERIOD, TimeUnit.MILLISECONDS) + " seconds.";
+        Toast.makeText(this, toastText, Toast.LENGTH_LONG).show();
+
+        // Will stop the advertising after a set time.
+        _Handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                _bleAdvertiser.stopAdvertising();
+                _AdvertiseButton.setEnabled(true);
+            }
+        }, Constants.ADVERTISE_PERIOD);
     }
 
     @Override
     public void onClick(View v) {
-        if( v.getId() == R.id.scan_btn) {
+        if( v.getId() == R.id.scan_btn ) {
             scan(v);
         }
         else if( v.getId() == R.id.advertise_btn ) {
