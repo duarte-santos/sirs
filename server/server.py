@@ -37,18 +37,25 @@ def get_current_time():
 def check_signature(data):
     # ------------ Verify signatures ---------------
 
-    # We know the health authority signed an encrypted set of the numbers (encrypted with the server public key)
+    # We know the health authority signed a SHA256 hash of the sum of the numbers
     # So, first we need to recriate the exact format of the data that the health authority signed
-    # FIXME : The health authority still receives plaintex
 
-    checkData = {"values":[]}
+    numbers = []
     for n in data['nk_array']:
-        checkData["values"].append(n['number'])
+        numbers.append(n['number'])
 
-    checkData = json.dumps(checkData, indent=0).encode('utf-8')
-    checkData = checkData.decode().replace("\n", "")
-    checkData = checkData.replace(" ", "")
-    checkData = checkData.encode('utf-8')
+    checkData = 0
+    for n in numbers:
+        checkData += n % 1000000
+
+    checkData = str(checkData).encode("UTF-8")
+    h = SHA256.new()
+    h.update(checkData)
+    checkData = base64.b64encode(h.digest())
+    checkData = checkData.decode()
+    checkData += '"'
+    checkData = '"' + checkData
+    checkData = checkData.encode()
 
     # Hash the data with SHA256
     h = SHA256.new()
@@ -163,13 +170,14 @@ class saveInfected(tornado.web.RequestHandler):
         data = jsonobj["nameValuePairs"]["data"]
 
         if not check_signature(data):
-            print("\nWrong signature! ", signature)
+            print("\nWrong signature! ")
             self.write("Wrong signature!")
             return
             
         for nk in data['nk_array']:
-            store_in_database(nk['number'], nk['key'], seconds, nanos)
-
+            dummy = "a"
+        store_in_database(nk['number'], nk['key'], seconds, nanos)
+        
         print("---------------------------------\n")
         self.write("Success")
 
@@ -185,6 +193,7 @@ class getInfected(tornado.web.RequestHandler):
         nanos = jsonobj["nameValuePairs"]["lastUpdateNanos"]
 
         data = get_all_from_database(seconds, nanos)
+        data = []
        
         response = {'data':data}
 

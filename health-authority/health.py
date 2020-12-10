@@ -12,6 +12,7 @@ import base64
 class getSignature(tornado.web.RequestHandler):
     def post(self):
         request = self.request.body
+        print(request)
 
         with open('health.priv', 'rb') as f:
             privkey = RSA.importKey(f.read())

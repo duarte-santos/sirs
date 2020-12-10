@@ -38,6 +38,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -272,17 +274,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
-    public void getSignature(View view){
+    public void getSignature(View view) throws NoSuchAlgorithmException {
         ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class, HEALTH_URL);
 
-        JSONArray numbers = new JSONArray();
         List<NumberKey> generated = get_generated();
-        for (NumberKey n : generated) {
-            System.out.println(n.getNumber());
-            numbers.put(n.getNumber());
+        Integer numbers = 0;
+        for (NumberKey nk : generated){
+            numbers += nk.getNumber() % 1000000; // 1 million
         }
 
-        Call<String> call = apiInterface.getSignature(numbers);
+        String strNumbers = numbers.toString();
+        System.out.println(numbers.toString());
+        System.out.println(numbers.toString().length());
+
+        System.out.println(numbers.toString().getBytes(StandardCharsets.UTF_8));
+
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hash = digest.digest(numbers.toString().getBytes(StandardCharsets.UTF_8));
+        String base64hash = Base64.getEncoder().encodeToString(hash);
+
+        Call<String> call = apiInterface.getSignature(base64hash);
+        System.out.println(base64hash);
 
         call.enqueue(new Callback<String>() {
             @Override
@@ -292,7 +304,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 System.out.println(signature);
 
                 // Create new signed batch
-                SignedBatch b = new SignedBatch(generated, numbers.length(), signature);
+                SignedBatch b = new SignedBatch(generated, generated.size(), signature);
                 signed = b;
             }
 
