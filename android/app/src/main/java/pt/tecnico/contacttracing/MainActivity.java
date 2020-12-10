@@ -33,6 +33,7 @@ import pt.tecnico.contacttracing.model.SignedBatch;
 import pt.tecnico.contacttracing.webservice.ApiInterface;
 import pt.tecnico.contacttracing.webservice.ServiceGenerator;
 
+import java.lang.reflect.Array;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
@@ -96,7 +97,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         resultText = (TextView) findViewById(R.id.result_text);
         resultText.setMovementMethod(new ScrollingMovementMethod());
 
-
         if (savedInstanceState == null) {
             BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -149,7 +149,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private List<NumberKey> get_received() {
-        Cursor cursor = database.rawQuery("Select * from ReceicedNumbers",null);
+        Cursor cursor = database.rawQuery("Select * from ReceivedNumbers",null);
         List<NumberKey> received = new ArrayList<>();
 
         cursor.moveToFirst();
@@ -167,27 +167,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /* ====================================================================== */
     /* ====[                          SERVER                            ]==== */
     /* ====================================================================== */
-
-    private void getHello(){
-        ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class, SERVER_URL);
-        Call<String> call = apiInterface.getHello();
-
-        call.enqueue(new Callback<String>() {
-            @Override
-            public void onResponse(Call<String> call, Response<String> response) {
-                String text = "I received it!\n";
-                text += response.body();
-                resultText.setText(text);
-            }
-
-            @Override
-            public void onFailure(Call<String> call, Throwable t) {
-                String text = "I did not receive it :(\n";
-                resultText.setText(text);
-                t.printStackTrace();
-            }
-        });
-    }
 
     public void sendInfected(View view) throws JSONException {
         if (signed == null) {
@@ -247,17 +226,31 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         return;
                     }
 
+                    List<NumberKey> received = new ArrayList<>();
+
                     String text = "New numbers received:\n";
                     for (int i = 0; i < pairs.length(); i++) {
                         JSONObject pair = pairs.getJSONObject(i);
                         String key = pair.getString("Key"); // base64 public key
                         int number = pair.getInt("Number");
-                        add_received(number, key);
+                        received.add(new NumberKey(key, number));
                         text += "Number " + number + "\n";
                     }
 
                     resultText.setText(text);
                     System.out.println(response.body());
+
+                    /* ------------ CHECK IF I WAS IN CONTACT WITH INFECTED -------------- */
+
+                    List<NumberKey> saved = get_received(); // Numbers saved from other users
+                    //saved.add(new NumberKey("key", 12345));
+                    for (NumberKey r : received){
+                        // FIXME : Verificar se os numeros q recebemos de outros users sao validos
+                        if (saved.contains(r)){
+                            System.out.println("IM INFECTED! AHHHHHRHRHHHHHHH");
+                            resultText.append("IM INFECTED! AHHHHHRHRHHHHHHH");
+                        }
+                    }
 
                 } catch (JSONException e) {
                     e.printStackTrace();

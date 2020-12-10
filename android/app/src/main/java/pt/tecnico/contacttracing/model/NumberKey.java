@@ -1,5 +1,7 @@
 package pt.tecnico.contacttracing.model;
 
+import java.util.Objects;
+
 public class NumberKey {
     private String key;
     private int number;
@@ -15,6 +17,20 @@ public class NumberKey {
                 "key='" + key + '\'' +
                 ", number=" + number +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        NumberKey numberKey = (NumberKey) o;
+        return number == numberKey.number &&
+                Objects.equals(key, numberKey.key);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(key, number);
     }
 
     public String getKey() {

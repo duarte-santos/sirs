@@ -192,6 +192,8 @@ class getInfected(tornado.web.RequestHandler):
         seconds = jsonobj["nameValuePairs"]["lastUpdateSeconds"]
         nanos = jsonobj["nameValuePairs"]["lastUpdateNanos"]
 
+        #test_infected = {"Number": 12345, "Key": "key"}
+
         data = get_all_from_database(seconds, nanos)
         data = []
        
