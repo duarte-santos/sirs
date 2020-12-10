@@ -32,6 +32,8 @@ import pt.tecnico.contacttracing.model.SignedBatch;
 import pt.tecnico.contacttracing.webservice.ApiInterface;
 import pt.tecnico.contacttracing.webservice.ServiceGenerator;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -58,7 +60,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     static Instant lastUpdate = null;
 
-    private Integer lastGenerated = null;
+    private Integer _lastGenerated = null;
 
     private String SERVER_URL = "https://10.0.2.2:8888/";
     private String HEALTH_URL = "https://10.0.2.2:9999/";
@@ -91,28 +93,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 
         if (savedInstanceState == null) {
-            /*BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+            BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 
             checkLocationPermission();
             checkBluetoothSupport(btAdapter);
 
             _bleScanner = new Scanner(this, btAdapter);
-            _bleAdvertiser = new Advertiser(this, btAdapter);*/
+            _bleAdvertiser = new Advertiser(this, btAdapter);
         }
 
         // Generate new number and MAC address every 5 minutes
         Timer timer = new Timer();
         timer.schedule(new GenerateNumber(), 0, 1000 * 10);
 
-
         init_database();
-
     }
 
 
     /* ====================================================================== */
     /* ====[                         DATABASE                           ]==== */
     /* ====================================================================== */
+
     private void init_database() {
         database = openOrCreateDatabase("database", MODE_PRIVATE,null);
         database.execSQL("CREATE TABLE IF NOT EXISTS GeneratedNumbers(Number INT PRIMARY KEY, PrivateKey VARCHAR);");
@@ -386,8 +387,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             _AdvertiseButton.setText(R.string.bt_start_advertise);
         } else {
             _Advertising = true;
-            String number_str = String.valueOf( lastGenerated );
-            _bleAdvertiser.startAdvertising(number_str);
+            String number_str = String.valueOf( _lastGenerated );
+            byte[] ts = getCurrentTimeInBytes();
+            _bleAdvertiser.startAdvertising(number_str.getBytes(StandardCharsets.UTF_8), ts, null);
             _AdvertiseButton.setText(R.string.bt_stop_advertise);
         }
     }
@@ -431,12 +433,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             String b64PublicKey = Base64.getEncoder().encodeToString(encodedPublicKey);
             String b64PublicKey_noSlashes = b64PublicKey.replace("/", "-"); // Replace slashes or it all goes to hell
             add_generated(n, b64PublicKey_noSlashes);
-            lastGenerated = n;
+            _lastGenerated = n;
 
             if (_Advertising) {
                 // Restart Advertise with new identifier.
                 _bleAdvertiser.stopAdvertising();
-                _bleAdvertiser.startAdvertising(String.valueOf(n));
+                byte[] ts = getCurrentTimeInBytes();
+                _bleAdvertiser.startAdvertising(String.valueOf(n).getBytes(StandardCharsets.UTF_8), ts, null);
             }
 
         }
@@ -456,6 +459,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
         return null;
+    }
+
+    public byte[] getCurrentTimeInBytes() {
+        //int unixTime = (int)(System.currentTimeMillis() / 1000);
+        //return new byte[]{ (byte) (unixTime >> 24), (byte) (unixTime >> 16), (byte) (unixTime >> 8), (byte) unixTime };
+        int dateInSec = (int) (System.currentTimeMillis() / 1000);
+        return ByteBuffer.allocate(4).putInt(dateInSec).array();
     }
 
 } // class MainActivity

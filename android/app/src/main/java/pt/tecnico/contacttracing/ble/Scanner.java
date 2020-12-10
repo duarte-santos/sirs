@@ -10,7 +10,9 @@ import android.content.Context;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -82,6 +84,11 @@ public class Scanner {
 
     private class SampleScanCallback extends ScanCallback {
 
+        public Instant bytesToInstant(byte[] bytes) {
+            int dateInMillis = ByteBuffer.wrap(bytes).getInt() * 1000;
+            return Instant.ofEpochMilli(dateInMillis);
+        }
+
         @Override
         public void onScanResult(int callbackType, ScanResult result) {
             super.onScanResult(callbackType, result);
@@ -95,7 +102,9 @@ public class Scanner {
             String advertiseData = new String(result.getScanRecord().getServiceData(Constants.AdvertiseData_Service_UUID), StandardCharsets.UTF_8);
             String  scanResponse = new String(result.getScanRecord().getServiceData( Constants.ScanResponse_Service_UUID), StandardCharsets.UTF_8);
 
-            Log.i(TAG, msg + " sent \"" + advertiseData + "\" + \"" + scanResponse + "\"" );
+            Instant instant = bytesToInstant(scanResponse.getBytes(StandardCharsets.UTF_8));
+
+            Log.i(TAG, msg + " sent \"" + advertiseData + "\" + \"" + instant + "\"" );
         }
 
         @Override

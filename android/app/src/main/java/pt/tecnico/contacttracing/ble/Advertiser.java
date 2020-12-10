@@ -32,13 +32,16 @@ public class Advertiser {
     /**
      * Starts BLE Advertising.
      */
-    public void startAdvertising(String data) {
+    public void startAdvertising(byte[] identifier, byte[] timestamp, byte[] signature) {
         Log.d(TAG, "Starting Advertise");
+
+        String advertiseData_data = "23bytes________________";
+        String  scanResponse_data = "________________23bytes";
 
         // Kick off a new scan.
         _bleAdvertiseCallback = new Advertiser.SampleAdvertiseCallback();
-        AdvertiseData advertiseData = buildAdvertiseData("23bytes________________", Constants.AdvertiseData_Service_UUID);
-        AdvertiseData  scanResponse = buildAdvertiseData("________________23bytes",  Constants.ScanResponse_Service_UUID);
+        AdvertiseData advertiseData = buildAdvertiseData(identifier, Constants.AdvertiseData_Service_UUID);
+        AdvertiseData  scanResponse = buildAdvertiseData(timestamp,  Constants.ScanResponse_Service_UUID);
         _bleAdvertiser.startAdvertising(buildAdvertiseSettings(), advertiseData, scanResponse, _bleAdvertiseCallback);
     }
 
@@ -56,10 +59,10 @@ public class Advertiser {
     /**
      * Return a {@link AdvertiseData} object which includes the Service UUID.
      */
-    private AdvertiseData buildAdvertiseData(String data, ParcelUuid serviceUuid) {
+    private AdvertiseData buildAdvertiseData(byte[] data, ParcelUuid serviceUuid) {
         AdvertiseData.Builder builder = new AdvertiseData.Builder();
         builder.addServiceUuid(serviceUuid)
-                .addServiceData(serviceUuid, data.getBytes(StandardCharsets.UTF_8));
+                .addServiceData(serviceUuid, data);
         return builder.build();
     }
 
@@ -67,6 +70,7 @@ public class Advertiser {
      * Return a {@link AdvertiseSettings} object set to use low power (to preserve battery life).
      */
     private AdvertiseSettings buildAdvertiseSettings() {
+        //FIXME : set timeout
         AdvertiseSettings.Builder builder = new AdvertiseSettings.Builder();
         builder.setAdvertiseMode(AdvertiseSettings.ADVERTISE_MODE_LOW_POWER)
                 .setTxPowerLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
