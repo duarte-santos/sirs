@@ -26,4 +26,7 @@ public class Constants {
     public static final long SCAN_PERIOD = 5000;
     public static final long ADVERTISE_PERIOD = 15000;
 
+    public static final int LOCATION_REFRESH_TIME = 15 * 60 * 1000; // 15 min
+    public static final int LOCATION_REFRESH_DISTANCE = 1000; // 1km
+
 }

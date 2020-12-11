@@ -29,4 +29,6 @@
     <string name="signature_ok">Signature received!</string>
     <string name="signature_nok">Error getting signature. Please try again.</string>
 
+    <string name="number_not_fresh">Received number is not fresh.</string>
+
 </resources>

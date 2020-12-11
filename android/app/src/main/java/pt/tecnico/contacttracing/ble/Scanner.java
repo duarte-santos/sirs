@@ -1,5 +1,6 @@
 package pt.tecnico.contacttracing.ble;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
@@ -15,6 +16,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+
+import pt.tecnico.contacttracing.MainActivity;
 
 
 /**
@@ -105,6 +108,9 @@ public class Scanner {
             Instant instant = bytesToInstant(scanResponse.getBytes(StandardCharsets.UTF_8));
 
             Log.i(TAG, msg + " sent \"" + advertiseData + "\" + \"" + instant + "\"" );
+
+            MainActivity activity = (MainActivity) _context;
+            activity.storeReceivedNumber(Integer.parseInt(advertiseData), instant);
         }
 
         @Override

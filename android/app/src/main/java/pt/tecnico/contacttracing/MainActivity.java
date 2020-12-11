@@ -7,6 +7,9 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.method.ScrollingMovementMethod;
@@ -45,6 +48,7 @@ import pt.tecnico.contacttracing.ble.Advertiser;
 import pt.tecnico.contacttracing.ble.Constants;
 import pt.tecnico.contacttracing.ble.Scanner;
 import pt.tecnico.contacttracing.model.NumberKey;
+import pt.tecnico.contacttracing.model.ReceivedNumber;
 import pt.tecnico.contacttracing.model.SignedBatch;
 import pt.tecnico.contacttracing.webservice.ApiInterface;
 import pt.tecnico.contacttracing.webservice.ServiceGenerator;
@@ -66,6 +70,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     static Instant lastUpdate = null;
 
     private Integer _lastGenerated = null;
+
+    private LocationManager locationManager;
+    private Location current_location;
 
     private String SERVER_URL = "https://10.0.2.2:8888/";
     private String HEALTH_URL = "https://10.0.2.2:9999/";
@@ -107,6 +114,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             _bleAdvertiser = new Advertiser(this, btAdapter);
         //}
 
+        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, Constants.LOCATION_REFRESH_TIME, Constants.LOCATION_REFRESH_DISTANCE, mLocationListener);
+
         _Handler = new Handler();
 
         // Generate new number and MAC address every 5 minutes
@@ -124,15 +134,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void init_database() {
         database = openOrCreateDatabase("database", MODE_PRIVATE,null);
         database.execSQL("CREATE TABLE IF NOT EXISTS GeneratedNumbers(Number INT PRIMARY KEY, PrivateKey VARCHAR);");
-        database.execSQL("CREATE TABLE IF NOT EXISTS ReceivedNumbers(Number INT PRIMARY KEY, PrivateKey VARCHAR);"); //FIXME
+        database.execSQL("CREATE TABLE IF NOT EXISTS ReceivedNumbers(Number INT PRIMARY KEY, Seconds INT, Nanos INT, Location VARCHAR);");
     }
 
     private void add_generated(int number, String key) {
         database.execSQL("INSERT OR IGNORE INTO GeneratedNumbers VALUES('" + number + "','" + key + "')");
     }
 
-    private void add_received(int number, String key) {
-        database.execSQL("INSERT OR IGNORE INTO ReceivedNumbers VALUES('" + number + "','" + key + "');");
+    private void add_received(int number, Instant timestamp, Location current_location) {
+        long seconds = timestamp.getEpochSecond();
+        long nanos = timestamp.getNano();
+        String location = current_location.toString();
+
+        database.execSQL("INSERT OR IGNORE INTO ReceivedNumbers VALUES('" + number + "','" + seconds + "','" + nanos + "','" + location + "');");
     }
 
     private List<NumberKey> get_generated() {
@@ -150,16 +164,19 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return generated;
     }
 
-    private List<NumberKey> get_received() {
+    private List<ReceivedNumber> get_received() {
         Cursor cursor = database.rawQuery("Select * from ReceivedNumbers",null);
-        List<NumberKey> received = new ArrayList<>();
+        List<ReceivedNumber> received = new ArrayList<>();
 
         cursor.moveToFirst();
         while (!cursor.isAfterLast()) {
             int number = cursor.getInt(0);
-            String key = cursor.getString(1);
-            NumberKey nk = new NumberKey(key, number);
-            received.add(nk);
+            int seconds = cursor.getInt(1);
+            int nanos = cursor.getInt(2);
+            String location = cursor.getString(3);
+            Instant instant = Instant.ofEpochSecond(seconds, nanos);
+            ReceivedNumber rn = new ReceivedNumber(number, instant, location);
+            received.add(rn);
             cursor.moveToNext();
         }
         return received;
@@ -244,13 +261,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                     /* ------------ CHECK IF I WAS IN CONTACT WITH INFECTED -------------- */
 
-                    List<NumberKey> saved = get_received(); // Numbers saved from other users
-                    //saved.add(new NumberKey("key", 12345));
-                    for (NumberKey r : received){
-                        // FIXME : Verificar se os numeros q recebemos de outros users sao validos
+                    List<ReceivedNumber> saved = get_received(); // Numbers saved from other users
+                    for (NumberKey r : received) {
                         if (saved.contains(r)){
-                            System.out.println("IM INFECTED! AHHHHHRHRHHHHHHH");
-                            resultText.append("IM INFECTED! AHHHHHRHRHHHHHHH");
+                            System.out.println("IM INFECTED! AHHHHHRHRHHHHHHH " + r.getNumber());
+                            resultText.append("IM INFECTED! AHHHHHRHRHHHHHHH"); //FIXME print location and for how long the person was in contact
+                            // Now we should validate the signature of each coincident number with the public keys received from the server
                         }
                     }
 
@@ -428,6 +444,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
+    /* ====================================================================== */
+    /* ====[                         LOCATION                           ]==== */
+    /* ====================================================================== */
+
+    private final LocationListener mLocationListener = new LocationListener() {
+        @Override
+        public void onLocationChanged(final Location location) {
+            current_location = location;
+        }
+    };
 
     /* ====================================================================== */
     /* ====[                        AUXILIARY                           ]==== */
@@ -490,6 +516,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         //return new byte[]{ (byte) (unixTime >> 24), (byte) (unixTime >> 16), (byte) (unixTime >> 8), (byte) unixTime };
         int dateInSec = (int) (System.currentTimeMillis() / 1000);
         return ByteBuffer.allocate(4).putInt(dateInSec).array();
+    }
+
+    public void storeReceivedNumber(int number, Instant received_ts) {
+        Instant current_ts = Instant.now();
+        long current_seconds = current_ts.getEpochSecond();
+        long received_seconds = received_ts.getEpochSecond();
+        if (current_seconds - received_seconds > 1) { // 1 sec fresh
+            resultText.setText(R.string.number_not_fresh);
+            return;
+        }
+        add_received(number, received_ts, current_location);
     }
 
 } // class MainActivity
