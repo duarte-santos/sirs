@@ -47,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 import pt.tecnico.contacttracing.ble.Advertiser;
 import pt.tecnico.contacttracing.ble.Constants;
 import pt.tecnico.contacttracing.ble.Scanner;
+import pt.tecnico.contacttracing.location.LocationTrack;
 import pt.tecnico.contacttracing.model.NumberKey;
 import pt.tecnico.contacttracing.model.ReceivedNumber;
 import pt.tecnico.contacttracing.model.SignedBatch;
@@ -71,13 +72,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private Integer _lastGenerated = null;
 
-    private LocationManager locationManager;
-    private Location current_location;
+    private String SERVER_URL = "https://192.168.1.93:8888/";
+    private String HEALTH_URL = "https://192.168.1.93:9999/";
 
-    private String SERVER_URL = "https://10.0.2.2:8888/";
-    private String HEALTH_URL = "https://10.0.2.2:9999/";
-    //private String SERVER_URL = "https://localhost:8888/";
-    //private String HEALTH_URL = "https://127.0.0.1:9999/"; FIXME run on physical
+    private LocationTrack _location;
 
     private boolean _Scanning = false;
     private boolean _Advertising = false;
@@ -113,9 +111,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             _bleScanner = new Scanner(this, btAdapter);
             _bleAdvertiser = new Advertiser(this, btAdapter);
         //}
-
-        locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, Constants.LOCATION_REFRESH_TIME, Constants.LOCATION_REFRESH_DISTANCE, mLocationListener);
 
         _Handler = new Handler();
 
@@ -444,16 +439,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
     }
 
-    /* ====================================================================== */
-    /* ====[                         LOCATION                           ]==== */
-    /* ====================================================================== */
-
-    private final LocationListener mLocationListener = new LocationListener() {
-        @Override
-        public void onLocationChanged(final Location location) {
-            current_location = location;
-        }
-    };
 
     /* ====================================================================== */
     /* ====[                        AUXILIARY                           ]==== */
@@ -485,7 +470,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             add_generated(n, b64PublicKey_noSlashes);
             _lastGenerated = n;
 
-            if (_Advertising) {
+            if (_Advertising) { //FIXME
                 // Restart Advertise with new identifier.
                 _bleAdvertiser.stopAdvertising();
                 byte[] ts = getCurrentTimeInBytes();
@@ -526,6 +511,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             resultText.setText(R.string.number_not_fresh);
             return;
         }
+
+        _location = new LocationTrack(this);
+        Location current_location = _location.getLocation();
+
         add_received(number, received_ts, current_location);
     }
 

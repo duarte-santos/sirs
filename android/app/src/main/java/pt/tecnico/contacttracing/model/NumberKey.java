@@ -23,7 +23,12 @@ public class NumberKey {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (o == null ) return false;
+        if (o instanceof ReceivedNumber) {
+            ReceivedNumber rn = (ReceivedNumber) o;
+            return number == rn.getNumber();
+        }
+        if (getClass() != o.getClass()) return false;
         NumberKey numberKey = (NumberKey) o;
         return number == numberKey.number &&
                 Objects.equals(key, numberKey.key);
