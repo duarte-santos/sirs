@@ -138,21 +138,37 @@ def store_in_database(number, key, seconds, nanos):
 # -------------------------- Get from Database ------------------------- #
 
 def get_all_from_database(lastUpdateSeconds, lastUpdateNanos):
+    global tableName
+
     data = []
 
     mydb, mycursor = connect_to_database()
-
     mycursor.execute("SELECT * FROM " + tableName + ";")
     myresult = mycursor.fetchall()
 
+    now = time.time()
     for row in myresult:
-        if int(row[2]) > lastUpdateSeconds or ( int(row[2]) == lastUpdateSeconds and int(row[3]) > lastUpdateNanos):
+        # row: (number, key, seconds, nanos)
+        number_ts = int(row[2]) + ( int(row[3]) / 1000000000 )
+        
+        if number_ts > lastUpdateSeconds: # number was added after last update
             data.append({"Number": row[0], "Key": row[1]})
             print("\nNumber: ", row[0], " Key: ", row[1])
-
+        
+        if (now - number_ts > 14*24*60*60): # 2 weeks have gone by, irrelevant number
+            delete_from_database(number)
 
     return data
 
+# ------------------------- Delete from Database ----------------------- #
+def delete_from_database(number):
+    global tableName
+    mydb, mycursor = connect_to_database()
+
+    mycursor.execute("DELETE FROM " + tableName + " WHERE number = '" + str(number) + "';")
+    mydb.commit()
+
+    print("deleted record: ", number)
 
 
 # ====================================================================== #
@@ -179,6 +195,7 @@ class saveInfected(tornado.web.RequestHandler):
         store_in_database(nk['number'], nk['key'], seconds, nanos)
         
         print("---------------------------------\n")
+        
         self.write("Success")
 
 
