@@ -192,7 +192,7 @@ class saveInfected(tornado.web.RequestHandler):
             
         for nk in data['nk_array']:
             dummy = "a"
-        store_in_database(nk['number'], nk['key'], seconds, nanos)
+            store_in_database(nk['number'], nk['key'], seconds, nanos)
         
         print("---------------------------------\n")
         
@@ -212,7 +212,6 @@ class getInfected(tornado.web.RequestHandler):
         #test_infected = {"Number": 12345, "Key": "key"}
 
         data = get_all_from_database(seconds, nanos)
-        data = []
        
         response = {'data':data}
 

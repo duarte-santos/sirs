@@ -72,8 +72,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private Integer _lastGenerated = null;
 
-    private String SERVER_URL = "https://192.168.1.93:8888/";
-    private String HEALTH_URL = "https://192.168.1.93:9999/";
+    private String SERVER_URL = "https://192.168.1.125:8888/";
+    private String HEALTH_URL = "https://192.168.1.125:9999/";
 
     private LocationTrack _location;
 
@@ -460,6 +460,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     class GenerateNumber extends TimerTask {
         public void run() {
+            System.out.println("ADSASDKSAHNDKIJASHNDKIJASHNDKJASHDNSOAKIJDHNASOFHNSAOIFHOASFHASOIFJASOIFJOASFJHASFOI");
             Random rnd = new Random();
             int n = 10000000 + rnd.nextInt(90000000); //FIXME size of numbers
             KeyPair key = generateKeyPair();
