@@ -15,4 +15,8 @@ public class SignedBatch {
             this.nk_array.add(nk_array.get(i));
         }
     }
+
+    public List<NumberKey> getNk_array() {
+        return nk_array;
+    }
 }

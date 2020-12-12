@@ -188,6 +188,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return received;
     }
 
+    private void delete_from_generated(long number) {
+        database.execSQL("DELETE FROM GeneratedNumbers WHERE number='" + number + "';");
+    }
+
 
     /* ====================================================================== */
     /* ====[                          SERVER                            ]==== */
@@ -212,7 +216,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 resultText.setText(R.string.send_numbers_ok);
+
+                // Delete numbers that were already sent to the server
+                List<NumberKey> numberKeys = signed.getNk_array();
+                for (NumberKey nk : numberKeys)
+                    delete_from_generated(nk.getNumber());
+
                 signed = null; // signed batch sent, no longer valid
+
             }
 
             @Override
