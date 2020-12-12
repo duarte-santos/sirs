@@ -111,7 +111,7 @@ def init_database():
     
     mydb, mycursor = connect_to_database()
     mycursor.execute("CREATE TABLE IF NOT EXISTS " + tableName + \
-                    "  (number          INT PRIMARY KEY," \
+                    "  (number          BIGINT PRIMARY KEY," \
                     "   pkey            VARCHAR(255)," \
                     "   seconds         LONG," \
                     "   nanos           LONG);")

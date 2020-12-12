@@ -103,14 +103,14 @@ public class Scanner {
             String msg = ( ( name != null ) ? name : address );
 
             String advertiseData = new String(result.getScanRecord().getServiceData(Constants.AdvertiseData_Service_UUID), StandardCharsets.UTF_8);
-            String  scanResponse = new String(result.getScanRecord().getServiceData( Constants.ScanResponse_Service_UUID), StandardCharsets.UTF_8);
+            byte[]  scanResponse = result.getScanRecord().getServiceData( Constants.ScanResponse_Service_UUID);
 
-            Instant instant = bytesToInstant(scanResponse.getBytes(StandardCharsets.UTF_8));
+            Instant instant = bytesToInstant(scanResponse);
 
             Log.i(TAG, msg + " sent \"" + advertiseData + "\" + \"" + instant + "\"" );
 
             MainActivity activity = (MainActivity) _context;
-            activity.storeReceivedNumber(Integer.parseInt(advertiseData), instant);
+            activity.storeReceivedNumber(Long.parseLong(advertiseData), instant);
         }
 
         @Override

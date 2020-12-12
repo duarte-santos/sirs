@@ -5,9 +5,9 @@ import java.util.Objects;
 
 public class NumberKey {
     private String key;
-    private int number;
+    private long number;
 
-    public NumberKey(String key, int number){
+    public NumberKey(String key, long number){
         this.key = key;
         this.number = number;
     }
@@ -47,11 +47,11 @@ public class NumberKey {
         this.key = key;
     }
 
-    public int getNumber() {
+    public long getNumber() {
         return number;
     }
 
-    public void setNumber(int number) {
+    public void setNumber(long number) {
         this.number = number;
     }
 }

@@ -13,6 +13,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -70,7 +71,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     static Instant lastUpdate = null;
 
-    private Integer _lastGenerated = null;
+    private Long _lastGenerated = null;
 
     private String SERVER_URL = "https://192.168.1.125:8888/";
     private String HEALTH_URL = "https://192.168.1.125:9999/";
@@ -116,7 +117,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         // Generate new number and MAC address every 5 minutes
         Timer timer = new Timer();
-        timer.schedule(new GenerateNumber(), 0, 1000 * 10);
+        timer.schedule(new GenerateNumber(), 0, 1000 * 30);
 
         init_database();
     }
@@ -128,20 +129,27 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void init_database() {
         database = openOrCreateDatabase("database", MODE_PRIVATE,null);
-        database.execSQL("CREATE TABLE IF NOT EXISTS GeneratedNumbers(Number INT PRIMARY KEY, PrivateKey VARCHAR);");
-        database.execSQL("CREATE TABLE IF NOT EXISTS ReceivedNumbers(Number INT PRIMARY KEY, Seconds INT, Nanos INT, Location VARCHAR);");
+        database.execSQL("CREATE TABLE IF NOT EXISTS GeneratedNumbers(Number INTEGER PRIMARY KEY, PrivateKey VARCHAR);");
+        database.execSQL("CREATE TABLE IF NOT EXISTS ReceivedNumbers(Number INTEGER PRIMARY KEY, FirstSeconds INT, FirstNanos INT, LastSeconds INT, LastNanos INT, Location VARCHAR);");
     }
 
-    private void add_generated(int number, String key) {
+    private void add_generated(long number, String key) {
         database.execSQL("INSERT OR IGNORE INTO GeneratedNumbers VALUES('" + number + "','" + key + "')");
     }
 
-    private void add_received(int number, Instant timestamp, Location current_location) {
+    private void add_received(long number, Instant timestamp, Location current_location) {
+        Cursor cursor = database.rawQuery("Select * from ReceivedNumbers where Number='"+ number + "';",null);
         long seconds = timestamp.getEpochSecond();
         long nanos = timestamp.getNano();
-        String location = current_location.toString();
 
-        database.execSQL("INSERT OR IGNORE INTO ReceivedNumbers VALUES('" + number + "','" + seconds + "','" + nanos + "','" + location + "');");
+        if (cursor.getCount() == 0) {
+            String location = current_location.toString();
+            database.execSQL("INSERT INTO ReceivedNumbers VALUES('" + number + "','" + seconds + "','" + nanos + "','" + seconds + "','" + nanos + "','" + location + "');");
+        }
+        else {
+            database.execSQL("UPDATE ReceivedNumbers SET LastSeconds='" + seconds + "', LastNanos='" + nanos + "' WHERE number='" + number + "';");
+        }
+
     }
 
     private List<NumberKey> get_generated() {
@@ -150,7 +158,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         cursor.moveToFirst();
         while (!cursor.isAfterLast()) {
-            int number = cursor.getInt(0);
+            long number = cursor.getLong(0);
             String key = cursor.getString(1);
             NumberKey nk = new NumberKey(key, number);
             generated.add(nk);
@@ -165,12 +173,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         cursor.moveToFirst();
         while (!cursor.isAfterLast()) {
-            int number = cursor.getInt(0);
-            int seconds = cursor.getInt(1);
-            int nanos = cursor.getInt(2);
-            String location = cursor.getString(3);
-            Instant instant = Instant.ofEpochSecond(seconds, nanos);
-            ReceivedNumber rn = new ReceivedNumber(number, instant, location);
+            long number = cursor.getLong(0);
+            int firstSeconds = cursor.getInt(1);
+            int firstNanos = cursor.getInt(2);
+            int lastSeconds = cursor.getInt(3);
+            int lastNanos = cursor.getInt(4);
+            String location = cursor.getString(5);
+            Instant firstInstant = Instant.ofEpochSecond(firstSeconds, firstNanos);
+            Instant lastInstant = Instant.ofEpochSecond(lastSeconds, lastNanos);
+            ReceivedNumber rn = new ReceivedNumber(number, firstInstant, lastInstant, location);
             received.add(rn);
             cursor.moveToNext();
         }
@@ -246,7 +257,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     for (int i = 0; i < pairs.length(); i++) {
                         JSONObject pair = pairs.getJSONObject(i);
                         String key = pair.getString("Key"); // base64 public key
-                        int number = pair.getInt("Number");
+                        long number = pair.getLong("Number");
                         received.add(new NumberKey(key, number));
                         text += "Number " + number + "\n";
                     }
@@ -257,12 +268,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     /* ------------ CHECK IF I WAS IN CONTACT WITH INFECTED -------------- */
 
                     List<ReceivedNumber> saved = get_received(); // Numbers saved from other users
-                    for (NumberKey r : received) {
-                        if (saved.contains(r)){
-                            System.out.println("IM INFECTED! AHHHHHRHRHHHHHHH " + r.getNumber());
-                            resultText.append("IM INFECTED! AHHHHHRHRHHHHHHH"); //FIXME print location and for how long the person was in contact
-                            // Now we should validate the signature of each coincident number with the public keys received from the server
+
+                    List<ReceivedNumber> infected = new ArrayList<>();
+                    for (ReceivedNumber savedNumber : saved) {
+                        if (received.contains(savedNumber)) {
+                            infected.add(savedNumber);
                         }
+                        else
+                            Log.e(TAG, String.valueOf(savedNumber));
+                    }
+                    if (!infected.isEmpty()) {
+                        String logText = "> Found contact with infected person:\n\n";
+                        for (ReceivedNumber infectedNumber : infected) {
+                            logText += infectedNumber.toString() + "\n";
+                        }
+                        Log.i(TAG, logText);
+                        resultText.setText(logText);
                     }
 
                 } catch (JSONException e) {
@@ -284,7 +305,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class, HEALTH_URL);
 
         List<NumberKey> generated = get_generated();
-        Integer numbers = 0;
+        Long numbers = 0L;
         for (NumberKey nk : generated){
             numbers += nk.getNumber() % 1000000; // 1 million
         }
@@ -460,9 +481,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     class GenerateNumber extends TimerTask {
         public void run() {
-            System.out.println("ADSASDKSAHNDKIJASHNDKIJASHNDKJASHDNSOAKIJDHNASOFHNSAOIFHOASFHASOIFJASOIFJOASFJHASFOI");
             Random rnd = new Random();
-            int n = 10000000 + rnd.nextInt(90000000); //FIXME size of numbers
+            long n = (long) (1000000000000000L + rnd.nextFloat() * 9000000000000000L);
             KeyPair key = generateKeyPair();
 
             byte[] encodedPublicKey = key.getPublic().getEncoded();
@@ -498,25 +518,25 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     public byte[] getCurrentTimeInBytes() {
-        //int unixTime = (int)(System.currentTimeMillis() / 1000);
-        //return new byte[]{ (byte) (unixTime >> 24), (byte) (unixTime >> 16), (byte) (unixTime >> 8), (byte) unixTime };
         int dateInSec = (int) (System.currentTimeMillis() / 1000);
         return ByteBuffer.allocate(4).putInt(dateInSec).array();
     }
 
-    public void storeReceivedNumber(int number, Instant received_ts) {
+    public void storeReceivedNumber(long number, Instant received_ts) {
         Instant current_ts = Instant.now();
         long current_seconds = current_ts.getEpochSecond();
         long received_seconds = received_ts.getEpochSecond();
-        if (current_seconds - received_seconds > 1) { // 1 sec fresh
+        long advertise_seconds = Constants.ADVERTISE_PERIOD / 1000;
+        if ( Math.abs(current_seconds - received_seconds) > advertise_seconds + 1 ) { // 1 sec fresh
             resultText.setText(R.string.number_not_fresh);
+            Log.e(TAG, "NOT FRESH!");
             return;
         }
 
         _location = new LocationTrack(this);
         Location current_location = _location.getLocation();
 
-        add_received(number, received_ts, current_location);
+        add_received(number, current_ts, current_location);
     }
 
 } // class MainActivity
