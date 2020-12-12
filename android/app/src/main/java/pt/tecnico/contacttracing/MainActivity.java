@@ -83,7 +83,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private Scanner _bleScanner;
     private Advertiser _bleAdvertiser;
-    private Handler _Handler;
+    private Handler _ScanHandler;
+    private Handler _AdvertiseHandler;
 
     private Button _ScanButton;
     private Button _AdvertiseButton;
@@ -113,11 +114,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             _bleAdvertiser = new Advertiser(this, btAdapter);
         //}
 
-        _Handler = new Handler();
+        _ScanHandler = new Handler();
+        _AdvertiseHandler = new Handler();
 
-        // Generate new number and MAC address every 5 minutes
         Timer timer = new Timer();
-        timer.schedule(new GenerateNumber(), 0, 1000 * 30);
+        timer.schedule(new GenerateNumber(), 0, Constants.ROTATION_PERIOD);
 
         init_database();
     }
@@ -410,44 +411,82 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /* ====[                      UI INTERACTION                        ]==== */
     /* ====================================================================== */
 
+    /* SCAN */
 
-
-    public void scan(View v) {
-        _ScanButton.setEnabled(false);
-
+    public void scanStart() {
         _bleScanner.startScanning();
 
-        String toastText = "Scanning for " + TimeUnit.SECONDS.convert(Constants.SCAN_PERIOD, TimeUnit.MILLISECONDS) + " seconds.";
-        Toast.makeText(this, toastText, Toast.LENGTH_LONG).show();
-
-        // Will stop the scanning after a set time.
-        _Handler.postDelayed(new Runnable() {
+        _ScanHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                _bleScanner.stopScanning();
-                _ScanButton.setEnabled(true);
+                scanStop();
             }
         }, Constants.SCAN_PERIOD);
     }
 
-    public void advertise(View v) {
-        _AdvertiseButton.setEnabled(false);
+    public void scanStop() {
+        _bleScanner.stopScanning();
 
-        String number_str = String.valueOf( _lastGenerated );
+        _ScanHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                scanStart();
+            }
+        }, Constants.SCAN_INTERVAL);
+    }
+
+    public void scan(View v) {
+        if (_Scanning) {
+            _bleScanner.stopScanning();
+            _ScanHandler.removeCallbacksAndMessages(null);
+            _Scanning = false;
+            _ScanButton.setText(R.string.bt_start_scan);
+        }
+        else {
+            scanStart();
+            _Scanning = true;
+            _ScanButton.setText(R.string.bt_stop_scan);
+        }
+    }
+
+    /* ADVERTISE */
+
+    public void advertiseStart() {
+        String number_str = String.valueOf(_lastGenerated);
         byte[] ts = getCurrentTimeInBytes();
         _bleAdvertiser.startAdvertising(number_str.getBytes(StandardCharsets.UTF_8), ts, null);
 
-        String toastText = "Advertising for " + TimeUnit.SECONDS.convert(Constants.ADVERTISE_PERIOD, TimeUnit.MILLISECONDS) + " seconds.";
-        Toast.makeText(this, toastText, Toast.LENGTH_LONG).show();
-
-        // Will stop the advertising after a set time.
-        _Handler.postDelayed(new Runnable() {
+        _AdvertiseHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                _bleAdvertiser.stopAdvertising();
-                _AdvertiseButton.setEnabled(true);
+                advertiseStop();
             }
         }, Constants.ADVERTISE_PERIOD);
+    }
+
+    public void advertiseStop() {
+        _bleAdvertiser.stopAdvertising();
+
+        _AdvertiseHandler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                advertiseStart();
+            }
+        }, Constants.ADVERTISE_INTERVAL);
+    }
+
+    public void advertise(View v) {
+        if (_Advertising) {
+            _bleAdvertiser.stopAdvertising();
+            _AdvertiseHandler.removeCallbacksAndMessages(null);
+            _Advertising = false;
+            _AdvertiseButton.setText(R.string.bt_start_advertise);
+        }
+        else {
+            advertiseStart();
+            _Advertising = true;
+            _AdvertiseButton.setText(R.string.bt_stop_advertise);
+        }
     }
 
     @Override
@@ -490,14 +529,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             String b64PublicKey_noSlashes = b64PublicKey.replace("/", "-"); // Replace slashes or it all goes to hell
             add_generated(n, b64PublicKey_noSlashes);
             _lastGenerated = n;
-
-            if (_Advertising) { //FIXME
-                // Restart Advertise with new identifier.
-                _bleAdvertiser.stopAdvertising();
-                byte[] ts = getCurrentTimeInBytes();
-                _bleAdvertiser.startAdvertising(String.valueOf(n).getBytes(StandardCharsets.UTF_8), ts, null);
-            }
-
         }
     }
 

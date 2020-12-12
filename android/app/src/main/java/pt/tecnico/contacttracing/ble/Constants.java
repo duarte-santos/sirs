@@ -23,8 +23,14 @@ public class Constants {
     public static final int REQUEST_ENABLE_BT = 1;
     public static final int REQUEST_LOCATION = 2;
 
-    public static final long SCAN_PERIOD = 5000;
-    public static final long ADVERTISE_PERIOD = 15000;
+    private static final long SECOND = 1000;
+    private static final long MINUTE = 60 * SECOND;
+
+    public static final long ROTATION_PERIOD = 1 * MINUTE;
+    public static final long SCAN_PERIOD = 15 * SECOND;
+    public static final long SCAN_INTERVAL = 5 * SECOND;
+    public static final long ADVERTISE_PERIOD = 1 * SECOND;
+    public static final long ADVERTISE_INTERVAL = 5 * SECOND;
 
     public static final int LOCATION_REFRESH_TIME = 15 * 60 * 1000; // 15 min
     public static final int LOCATION_REFRESH_DISTANCE = 1000; // 1km
