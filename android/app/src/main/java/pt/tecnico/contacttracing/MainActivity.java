@@ -28,6 +28,7 @@ import androidx.core.content.ContextCompat;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -88,6 +89,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private Button _ScanButton;
     private Button _AdvertiseButton;
+    private Button _SignatureButton;
+    private Button _GetInfectedButton;
+    private Button _SendInfectedButton;
+    private Button _StartButton;
+    private Text _IpText;
     private TextView resultText;
 
     @Override
@@ -98,20 +104,46 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         _ScanButton = (Button) findViewById(R.id.scan_btn);
         _AdvertiseButton = (Button) findViewById(R.id.advertise_btn);
+        _SignatureButton = (Button) findViewById(R.id.signature_btn);
+        _GetInfectedButton = (Button) findViewById(R.id.getinfected_btn);
+        _SendInfectedButton = (Button) findViewById(R.id.sendinfected_btn);
+        _StartButton = (Button) findViewById(R.id.start_btn);
+        _IpText = (Text) findViewById(R.id.ipText);
+
 
         _ScanButton.setOnClickListener(this);
         _AdvertiseButton.setOnClickListener(this);
         resultText = (TextView) findViewById(R.id.result_text);
         resultText.setMovementMethod(new ScrollingMovementMethod());
 
+        _AdvertiseButton.setEnabled(false);
+        _ScanButton.setEnabled(false);
+        _GetInfectedButton.setEnabled(false);
+        _SendInfectedButton.setEnabled(false);
+        _SignatureButton.setEnabled(false);
+
+    }
+
+    public void start(){
+
+        _AdvertiseButton.setEnabled(true);
+        _ScanButton.setEnabled(true);
+        _GetInfectedButton.setEnabled(true);
+        _SendInfectedButton.setEnabled(true);
+        _SignatureButton.setEnabled(true);
+        _StartButton.setEnabled(false);
+
+        SERVER_URL = "https://" + _IpText.getWholeText() + ":8888/";
+        HEALTH_URL = "https://" + _IpText.getWholeText() + ":9999/";
+
         //if (savedInstanceState == null) {
-            BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+        BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 
-            checkLocationPermission();
-            checkBluetoothSupport(btAdapter);
+        checkLocationPermission();
+        checkBluetoothSupport(btAdapter);
 
-            _bleScanner = new Scanner(this, btAdapter);
-            _bleAdvertiser = new Advertiser(this, btAdapter);
+        _bleScanner = new Scanner(this, btAdapter);
+        _bleAdvertiser = new Advertiser(this, btAdapter);
         //}
 
         _ScanHandler = new Handler();
@@ -121,6 +153,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         timer.schedule(new GenerateNumber(), 0, Constants.ROTATION_PERIOD);
 
         init_database();
+
     }
 
 
@@ -189,6 +222,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return received;
     }
 
+    private void delete_from_generated(long number) {
+        database.execSQL("DELETE FROM GeneratedNumbers WHERE number='" + number + "';");
+    }
+
 
     /* ====================================================================== */
     /* ====[                          SERVER                            ]==== */
@@ -213,7 +250,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
                 resultText.setText(R.string.send_numbers_ok);
+
+                // Delete numbers that were already sent to the server
+                List<NumberKey> numberKeys = signed.getNk_array();
+                for (NumberKey nk : numberKeys)
+                    delete_from_generated(nk.getNumber());
+
                 signed = null; // signed batch sent, no longer valid
+
             }
 
             @Override
