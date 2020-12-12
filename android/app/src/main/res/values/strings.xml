@@ -31,4 +31,6 @@
 
     <string name="number_not_fresh">Received number is not fresh.</string>
 
+    <string name="location_not_available">Location is not available at the moment.</string>
+
 </resources>

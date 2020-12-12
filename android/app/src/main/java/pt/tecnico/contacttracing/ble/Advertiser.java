@@ -51,7 +51,7 @@ public class Advertiser {
 
         // Stop the advertise, wipe the callback.
         _bleAdvertiser.stopAdvertising(_bleAdvertiseCallback);
-        _bleAdvertiseCallback = null;
+        //_bleAdvertiseCallback = null;
     }
 
     /**

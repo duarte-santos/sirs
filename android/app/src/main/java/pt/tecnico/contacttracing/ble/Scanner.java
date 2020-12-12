@@ -55,7 +55,7 @@ public class Scanner {
 
         // Stop the scan, wipe the callback.
         _bleScanner.stopScan(_bleScanCallback);
-        _bleScanCallback = null;
+        //_bleScanCallback = null;
     }
 
     /**

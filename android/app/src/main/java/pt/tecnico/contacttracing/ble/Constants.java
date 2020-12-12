@@ -29,7 +29,7 @@ public class Constants {
     public static final long ROTATION_PERIOD = 1 * MINUTE;
     public static final long SCAN_PERIOD = 15 * SECOND;
     public static final long SCAN_INTERVAL = 5 * SECOND;
-    public static final long ADVERTISE_PERIOD = 1 * SECOND;
+    public static final long ADVERTISE_PERIOD = 15 * SECOND;
     public static final long ADVERTISE_INTERVAL = 5 * SECOND;
 
     public static final int LOCATION_REFRESH_TIME = 15 * 60 * 1000; // 15 min

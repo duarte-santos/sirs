@@ -8,8 +8,6 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.method.ScrollingMovementMethod;
@@ -30,7 +28,6 @@ import com.google.android.material.textfield.TextInputEditText;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.w3c.dom.Text;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -46,7 +43,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.TimeUnit;
 
 import pt.tecnico.contacttracing.ble.Advertiser;
 import pt.tecnico.contacttracing.ble.Constants;
@@ -62,22 +58,22 @@ import retrofit2.Callback;
 import retrofit2.Response;
 
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity /*implements View.OnClickListener*/ {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    // Database
-    SQLiteDatabase database;
-
-    // Signed by health authority
-    static SignedBatch signed = null;
-
-    static Instant lastUpdate = null;
-
-    private Long _lastGenerated = null;
-
     private String SERVER_URL = "https://192.168.1.125:8888/";
     private String HEALTH_URL = "https://192.168.1.125:9999/";
+
+    // Database
+    SQLiteDatabase _database;
+
+    // Signed by health authority
+    static SignedBatch _signed = null;
+
+    static Instant _lastUpdate = null;
+
+    private Long _lastGenerated = null;
 
     private LocationTrack _location;
 
@@ -96,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button _SendInfectedButton;
     private Button _StartButton;
     private TextInputEditText _IpText;
-    private TextView resultText;
+    private TextView _resultText;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,12 +107,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         _SendInfectedButton = (Button) findViewById(R.id.sendinfected_btn);
         _StartButton = (Button) findViewById(R.id.start_btn);
         _IpText = (TextInputEditText) findViewById(R.id.ipText);
+        _resultText = (TextView) findViewById(R.id.result_text);
+        _resultText.setMovementMethod(new ScrollingMovementMethod());
 
+        //_ScanButton.setOnClickListener(this);
+        //_AdvertiseButton.setOnClickListener(this);
 
-        _ScanButton.setOnClickListener(this);
-        _AdvertiseButton.setOnClickListener(this);
-        resultText = (TextView) findViewById(R.id.result_text);
-        resultText.setMovementMethod(new ScrollingMovementMethod());
+        _location = new LocationTrack(this);
 
         _AdvertiseButton.setEnabled(false);
         _ScanButton.setEnabled(false);
@@ -134,8 +131,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         _SignatureButton.setEnabled(true);
         _StartButton.setEnabled(false);
 
-        SERVER_URL = "https://" + _IpText.toString() + ":8888/";
-        HEALTH_URL = "https://" + _IpText.toString() + ":9999/";
+        SERVER_URL = "https://" + _IpText.getText().toString() + ":8888/";
+        HEALTH_URL = "https://" + _IpText.getText().toString() + ":9999/";
 
         //if (savedInstanceState == null) {
         BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -163,32 +160,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /* ====================================================================== */
 
     private void init_database() {
-        database = openOrCreateDatabase("database", MODE_PRIVATE,null);
-        database.execSQL("CREATE TABLE IF NOT EXISTS GeneratedNumbers(Number INTEGER PRIMARY KEY, PrivateKey VARCHAR);");
-        database.execSQL("CREATE TABLE IF NOT EXISTS ReceivedNumbers(Number INTEGER PRIMARY KEY, FirstSeconds INT, FirstNanos INT, LastSeconds INT, LastNanos INT, Location VARCHAR);");
+        _database = openOrCreateDatabase("database", MODE_PRIVATE,null);
+        _database.execSQL("CREATE TABLE IF NOT EXISTS GeneratedNumbers(Number INTEGER PRIMARY KEY, PrivateKey VARCHAR);");
+        _database.execSQL("CREATE TABLE IF NOT EXISTS ReceivedNumbers(Number INTEGER PRIMARY KEY, FirstSeconds INT, FirstNanos INT, LastSeconds INT, LastNanos INT, Location VARCHAR);");
     }
 
     private void add_generated(long number, String key) {
-        database.execSQL("INSERT OR IGNORE INTO GeneratedNumbers VALUES('" + number + "','" + key + "')");
+        _database.execSQL("INSERT OR IGNORE INTO GeneratedNumbers VALUES('" + number + "','" + key + "')");
     }
 
     private void add_received(long number, Instant timestamp, Location current_location) {
-        Cursor cursor = database.rawQuery("Select * from ReceivedNumbers where Number='"+ number + "';",null);
+        Cursor cursor = _database.rawQuery("Select * from ReceivedNumbers where Number='"+ number + "';",null);
         long seconds = timestamp.getEpochSecond();
         long nanos = timestamp.getNano();
 
         if (cursor.getCount() == 0) {
-            String location = current_location.toString();
-            database.execSQL("INSERT INTO ReceivedNumbers VALUES('" + number + "','" + seconds + "','" + nanos + "','" + seconds + "','" + nanos + "','" + location + "');");
+            String location = ( (current_location == null) ? "" : current_location.toString() );
+            _database.execSQL("INSERT INTO ReceivedNumbers VALUES('" + number + "','" + seconds + "','" + nanos + "','" + seconds + "','" + nanos + "','" + location + "');");
         }
         else {
-            database.execSQL("UPDATE ReceivedNumbers SET LastSeconds='" + seconds + "', LastNanos='" + nanos + "' WHERE number='" + number + "';");
+            _database.execSQL("UPDATE ReceivedNumbers SET LastSeconds='" + seconds + "', LastNanos='" + nanos + "' WHERE number='" + number + "';");
         }
 
     }
 
     private List<NumberKey> get_generated() {
-        Cursor cursor = database.rawQuery("Select * from GeneratedNumbers",null);
+        Cursor cursor = _database.rawQuery("Select * from GeneratedNumbers",null);
         List<NumberKey> generated = new ArrayList<>();
 
         cursor.moveToFirst();
@@ -203,7 +200,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private List<ReceivedNumber> get_received() {
-        Cursor cursor = database.rawQuery("Select * from ReceivedNumbers",null);
+        Cursor cursor = _database.rawQuery("Select * from ReceivedNumbers",null);
         List<ReceivedNumber> received = new ArrayList<>();
 
         cursor.moveToFirst();
@@ -224,7 +221,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void delete_from_generated(long number) {
-        database.execSQL("DELETE FROM GeneratedNumbers WHERE number='" + number + "';");
+        _database.execSQL("DELETE FROM GeneratedNumbers WHERE number='" + number + "';");
     }
 
 
@@ -233,14 +230,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     /* ====================================================================== */
 
     public void sendInfected(View view) throws JSONException {
-        if (signed == null) {
+        if (_signed == null) {
             Toast.makeText(this, "Please ask health authority for a signature before sending the numbers.", Toast.LENGTH_LONG).show();
             return;
         }
 
         ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class, SERVER_URL);
         JSONObject json = new JSONObject();
-        json.put("data", signed);
+        json.put("data", _signed);
 
         System.out.println(json);
 
@@ -250,20 +247,20 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         call.enqueue(new Callback<Void>() {
             @Override
             public void onResponse(Call<Void> call, Response<Void> response) {
-                resultText.setText(R.string.send_numbers_ok);
+                _resultText.setText(R.string.send_numbers_ok);
 
                 // Delete numbers that were already sent to the server
-                List<NumberKey> numberKeys = signed.getNk_array();
+                List<NumberKey> numberKeys = _signed.getNk_array();
                 for (NumberKey nk : numberKeys)
                     delete_from_generated(nk.getNumber());
 
-                signed = null; // signed batch sent, no longer valid
+                _signed = null; // signed batch sent, no longer valid
 
             }
 
             @Override
             public void onFailure(Call<Void> call, Throwable t) {
-                resultText.setText(R.string.send_numbers_nok);
+                _resultText.setText(R.string.send_numbers_nok);
                 t.printStackTrace();
             }
         });
@@ -272,8 +269,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void getInfected(View view) throws JSONException{
         ApiInterface apiInterface = ServiceGenerator.createService(ApiInterface.class, SERVER_URL);
 
-        long seconds = lastUpdate != null ? lastUpdate.getEpochSecond() : 0;
-        long nanos = lastUpdate != null ? lastUpdate.getNano() : 0;
+        long seconds = _lastUpdate != null ? _lastUpdate.getEpochSecond() : 0;
+        long nanos = _lastUpdate != null ? _lastUpdate.getNano() : 0;
 
         JSONObject json = new JSONObject();
         json.put("lastUpdateSeconds", seconds);
@@ -290,10 +287,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     JSONObject jsonObj = new JSONObject(String.valueOf(o));
                     JSONArray pairs = (JSONArray) jsonObj.get("data");
 
-                    lastUpdate = Instant.now();
+                    _lastUpdate = Instant.now();
 
                     if (pairs.length() == 0) {
-                        resultText.setText(R.string.no_new_numbers);
+                        _resultText.setText(R.string.no_new_numbers);
                         return;
                     }
 
@@ -308,7 +305,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         text += "Number " + number + "\n";
                     }
 
-                    resultText.setText(text);
+                    _resultText.setText(text);
                     System.out.println(response.body());
 
                     /* ------------ CHECK IF I WAS IN CONTACT WITH INFECTED -------------- */
@@ -329,7 +326,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             logText += infectedNumber.toString() + "\n";
                         }
                         Log.i(TAG, logText);
-                        resultText.setText(logText);
+                        _resultText.setText(logText);
                     }
 
                 } catch (JSONException e) {
@@ -339,7 +336,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             @Override
             public void onFailure(Call<Object> call, Throwable t) {
-                resultText.setText(R.string.receive_numbers_nok);
+                _resultText.setText(R.string.receive_numbers_nok);
                 t.printStackTrace();
             }
         });
@@ -373,17 +370,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             @Override
             public void onResponse(Call<String> call, Response<String> response) {
                 String signature = String.valueOf(response.body());
-                resultText.setText(R.string.signature_ok);
+                _resultText.setText(R.string.signature_ok);
                 System.out.println(signature);
 
                 // Create new signed batch
                 SignedBatch b = new SignedBatch(generated, generated.size(), signature);
-                signed = b;
+                _signed = b;
             }
 
             @Override
             public void onFailure(Call<String> call, Throwable t) {
-                resultText.setText(R.string.signature_ok);
+                _resultText.setText(R.string.signature_ok);
                 t.printStackTrace();
             }
         });
@@ -482,14 +479,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     public void scan(View v) {
         if (_Scanning) {
-            _bleScanner.stopScanning();
-            _ScanHandler.removeCallbacksAndMessages(null);
             _Scanning = false;
+            _ScanHandler.removeCallbacksAndMessages(null);
+            _bleScanner.stopScanning();
             _ScanButton.setText(R.string.bt_start_scan);
         }
         else {
-            scanStart();
             _Scanning = true;
+            scanStart();
             _ScanButton.setText(R.string.bt_stop_scan);
         }
     }
@@ -522,18 +519,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     public void advertise(View v) {
         if (_Advertising) {
+            _Advertising = false;
             _bleAdvertiser.stopAdvertising();
             _AdvertiseHandler.removeCallbacksAndMessages(null);
-            _Advertising = false;
             _AdvertiseButton.setText(R.string.bt_start_advertise);
         }
         else {
-            advertiseStart();
             _Advertising = true;
+            advertiseStart();
             _AdvertiseButton.setText(R.string.bt_stop_advertise);
         }
     }
-
+/*
     @Override
     public void onClick(View v) {
         if( v.getId() == R.id.scan_btn ) {
@@ -543,7 +540,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             advertise(v);
         }
     }
-
+*/
 
     /* ====================================================================== */
     /* ====[                        AUXILIARY                           ]==== */
@@ -602,14 +599,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         Instant current_ts = Instant.now();
         long current_seconds = current_ts.getEpochSecond();
         long received_seconds = received_ts.getEpochSecond();
-        long advertise_seconds = Constants.ADVERTISE_PERIOD / 1000;
-        if ( Math.abs(current_seconds - received_seconds) > advertise_seconds + 1 ) { // 1 sec fresh
-            resultText.setText(R.string.number_not_fresh);
+        long epsilon = Constants.ADVERTISE_PERIOD / 1000 + 2;
+        if ( Math.abs(current_seconds - received_seconds) > epsilon ) {
+            _resultText.setText(R.string.number_not_fresh);
             Log.e(TAG, "NOT FRESH!");
             return;
         }
 
-        _location = new LocationTrack(this);
         Location current_location = _location.getLocation();
 
         add_received(number, current_ts, current_location);

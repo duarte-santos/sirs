@@ -24,6 +24,8 @@ public class ReceivedNumber {
 
     private String getLocationString() {
         // Retrieving Latitude and Longitude
+        if (location.equals(""))
+            return "Unknown";
         return location.split("gps ")[1].split(" hAcc")[0];
     }
 
@@ -31,9 +33,15 @@ public class ReceivedNumber {
     public String toString() {
         long duration = Duration.between(firstTimestamp, lastTimestamp).toMillis() / 1000;
         if (duration == 0) {
-            return "number: " + number + "\ndate: " + firstTimestamp + "\nperiod: less than " + Constants.SCAN_PERIOD / 1000 + " seconds\nlocation: " + getLocationString() + "\n";
+            return "Number: " + number + "\n" +
+                    "Date: " + firstTimestamp + "\n" +
+                    "Period: less than " + Constants.SCAN_PERIOD / 1000 + " seconds\n" +
+                    "Location: " + getLocationString() + "\n";
         }
-        return "number: " + number + "\ndate: " + firstTimestamp + "\nperiod: at least " + duration + " seconds\nlocation: " + getLocationString() + "\n";
+        return "Number: " + number + "\n" +
+                "Date: " + firstTimestamp + "\n" +
+                "Period: at least " + duration + " seconds\n" +
+                "Location: " + getLocationString() + "\n";
     }
 
     @Override
