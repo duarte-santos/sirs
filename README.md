@@ -14,8 +14,8 @@ To fully run our application, two android phones are also required - minimum And
 ## Setting up the environment
 1. Install AdoptOpenJDK 8 and add it to Path
 2. Install Gradle (v6.7.1) and add it to Path
-3. Install Android SDK 30 (or Android Studio) and add it to Path
-4. Install MySQL and add it to Path
+3. Install Android SDK 30 (or install Android Studio) and add it to Path
+4. Install MySQL and add it to Path. Create a user `root` with password `root`
 5. Install the required python modules: MySQL (eg.: `pip install mysqlclient`) and Crypto (eg.: `pip install pycryptodome`)
 
 
@@ -59,14 +59,16 @@ NOTE: Alternatively use `python3`
 
 **Step4: Interact with the app:**
 
+Fill the first text box with the IP where the server and the health authority are running and click `START`.
+
 The smartphones will automatically start generating random numbers and storing them.
 
-To turn on the ability for the smartphones to exchange numbers between them, click the buttons `ADVERTISE` and `SCAN`.
+To turn on the ability for the smartphones to exchange numbers between them, click the buttons `ADVERTISE` and `SCAN` (for example, one on each smartphone).
 
 To simulate an infected user, click the button `RECEIVE SIGNATURE` to get a certified signature from the health authority. Then, you can click `SEND INFECTED` to send the infected numbers, along with the signature, to the server. The server will store them in its database.
 
 To get updates on the infected numbers, click the `GET INFECTED` button. You will receive any new numbers that were stored on the server since the last update.
 
-If you choose to send numbers on a smartphone and ask for updates with the other, as they are close to each other (and, therefore, exchanging numbers through BLE), the app will warn you that you have been in contact with an infected person.
+If you choose to send numbers on the smartphone that was advertising and ask for updates on the one that was scanning, as they are close to each other (and, therefore, exchanging numbers through BLE), the app will warn the one that was scanning that it has been in contact with an infected person. It will display the infected numbers that it received, where it received them, and for how long it received them.
 
 This is the recommended steps to test our application. However, feel free to explore the capabilities of it at your own will.
