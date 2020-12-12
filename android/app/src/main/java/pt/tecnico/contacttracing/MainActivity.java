@@ -25,6 +25,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import com.google.android.material.textfield.TextInputEditText;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -92,7 +94,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button _GetInfectedButton;
     private Button _SendInfectedButton;
     private Button _StartButton;
-    private Text _IpText;
+    private TextInputEditText _IpText;
     private TextView resultText;
 
     @Override
@@ -107,7 +109,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         _GetInfectedButton = (Button) findViewById(R.id.getinfected_btn);
         _SendInfectedButton = (Button) findViewById(R.id.sendinfected_btn);
         _StartButton = (Button) findViewById(R.id.start_btn);
-        _IpText = (Text) findViewById(R.id.ipText);
+        _IpText = (TextInputEditText) findViewById(R.id.ipText);
 
 
         _ScanButton.setOnClickListener(this);
@@ -123,8 +125,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     }
 
-    public void start(){
-
+    public void start(View view) {
         _AdvertiseButton.setEnabled(true);
         _ScanButton.setEnabled(true);
         _GetInfectedButton.setEnabled(true);
@@ -132,8 +133,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         _SignatureButton.setEnabled(true);
         _StartButton.setEnabled(false);
 
-        SERVER_URL = "https://" + _IpText.getWholeText() + ":8888/";
-        HEALTH_URL = "https://" + _IpText.getWholeText() + ":9999/";
+        SERVER_URL = "https://" + _IpText.toString() + ":8888/";
+        HEALTH_URL = "https://" + _IpText.toString() + ":9999/";
 
         //if (savedInstanceState == null) {
         BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
